@@ -1,0 +1,21 @@
+@import '../../index';
+
+.Controls {
+    @extend %container;
+    height: 100px;
+
+    &__Track {
+        height: 100%;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        &-Action {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+        }
+    }
+
+}

@@ -3,18 +3,40 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^4.9.1",
+    "@material-ui/icons": "^4.9.1",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "@types/react": "^16.9.19",
+    "@types/react-dom": "^16.9.5",
+    "@types/socket.io-client": "^1.4.32",
+    "awesome-typescript-loader": "^5.2.1",
+    "clean-webpack-plugin": "^3.0.0",
+    "mini-css-extract-plugin": "^0.9.0",
+    "postcss-loader": "^3.0.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "react-scripts": "3.3.1"
+    "react-redux": "^7.1.3",
+    "react-scripts": "3.3.1",
+    "redux": "^4.0.5",
+    "rxjs": "^6.5.4",
+    "serviceworker-webpack-plugin": "^1.0.1",
+    "socket.io-client": "^2.3.0",
+    "socket.io-stream": "^0.9.1",
+    "source-map-loader": "^0.2.4",
+    "typescript": "^3.7.5",
+    "webpack-dev-middleware": "^3.7.2",
+    "webpack-hot-middleware": "^2.25.0",
+    "webpack-merge": "^4.2.2"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "wp:start": "webpack-dev-server --colors --config webpack.dev.js",
+    "wp:build": "webpack --config webpack.prod.js"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -30,5 +52,21 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.8.4",
+    "@babel/preset-env": "^7.8.4",
+    "@babel/preset-react": "^7.8.3",
+    "babel-loader": "^8.0.6",
+    "css-loader": "^3.4.2",
+    "eslint-plugin-react-hooks": "^2.3.0",
+    "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.2.0",
+    "node-sass": "^4.13.1",
+    "react-hot-loader": "^4.12.19",
+    "sass-loader": "^8.0.2",
+    "style-loader": "^1.1.3",
+    "ts-loader": "^6.2.1",
+    "webpack-cli": "^3.3.10"
   }
 }

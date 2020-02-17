@@ -1,0 +1,52 @@
+@import '../../index';
+
+
+.Playlist__Container {
+    @extend %container;
+    overflow-y: scroll;
+}
+
+ul {
+    list-style-type: none;
+}
+
+.streamer {
+
+    &__list {
+
+        .item__icon {
+            display: none;
+        }
+
+        .item__icon:hover {
+            display: inline-block;
+        }
+
+        &-item {
+            height: 90px;
+        }
+
+        &-item:not(:last-of-type) {
+            border-bottom: 1px solid rgb(40,44, 52);
+        }
+
+        &-item:hover {
+
+        }
+
+    }
+    
+}
+
+.MuiListItem-root {
+    max-width: 50vh;
+}
+
+.MuiList-padding {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.MuiList-root {
+    height: 85vh;
+}

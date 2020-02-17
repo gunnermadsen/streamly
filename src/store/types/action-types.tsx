@@ -1,0 +1,1 @@
+export const ADD_ALL_SONGS = "ADD_ALL_SONGS"
