@@ -5,19 +5,7 @@ import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import { connect } from 'socket.io-client';
 import './Uploader.scss'
 
-const mapStateToProps = (state: any) => ({ songs: state.songs })
-
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        margin: {
-            margin: theme.spacing(1),
-        },
-        extendedIcon: {
-            marginRight: theme.spacing(1),
-        },
-    }),
-);
-class Uploader extends Component {
+class UploaderComponent extends Component {
 
     private uploadRef = React.createRef()
 
@@ -51,5 +39,5 @@ class Uploader extends Component {
 
 // const Uploader = connect(mapStateToProps)(UploaderComponent)
 
-export default Uploader
+export default UploaderComponent
 

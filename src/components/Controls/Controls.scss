@@ -2,7 +2,7 @@
 
 .Controls {
     @extend %container;
-    height: 100px;
+    height: 60px;
 
     &__Track {
         height: 100%;
@@ -16,6 +16,15 @@
             justify-content: space-evenly;
             align-items: center;
         }
+    }
+
+}
+
+.Action {
+
+    &__Center {
+        width: 60px;
+        height: 60px;
     }
 
 }

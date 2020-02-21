@@ -27,3 +27,6 @@ yarn-error.log*
 
 # webpack
 webpack.config.js
+
+# repository
+/src/modules/streamily/repository

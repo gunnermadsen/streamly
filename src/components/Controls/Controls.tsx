@@ -1,54 +1,52 @@
-import React, { useEffect, useState } from 'react'
+import React, { Component } from 'react'
 import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
 import SkipNextIcon from '@material-ui/icons/SkipNext';
-import { createStyles, makeStyles, Theme } from '@material-ui/core'
 import PauseIcon from '@material-ui/icons/Pause'
+import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import IconButton from '@material-ui/core/IconButton'
 
 import { connect } from 'react-redux'
-
-import { addAllSongs } from '../../store/actions/actions'
+import { IPlayerState, IPlayerProps } from '../../store/reducers/reducer';
+import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map';
 
 import './Controls.scss'
 
-const mapStateToProps = (state: any) => ({ songs: state.songs })
+@connect(mapStateToProps, mapDispatchToProps)
+export default class Controls extends Component<IPlayerState, IPlayerProps>{
 
-const mapDispatchToProps = dispatch => {
-    return {
-        addAllSongs: songs => dispatch(addAllSongs(songs))
-    };
-}
+    public setPlayingState(event: any): void {
 
-function ControlsComponent() {
+        // if ()
 
-   
-    const [selectedIndex, setSelectedIndex] = useState(0)
+        const isPlaying = !this.props.isPlaying
 
-    const [playlist, setPlaylist] = useState([{ name: "loading..." }])
+        const message = this.props.isPlaying ? "Song is playing" : "Song is paused"
 
+        console.log(message)
 
-    // useEffect(() => ({}), [])
+        this.props.setPlayingState(isPlaying)
 
-    return (
-        <div className="Controls">
-            <div className="Controls__Track">
-                <div className="Controls__Track-Action">
-                    <IconButton color="secondary" aria-label="add an alarm">
-                        <SkipPreviousIcon />
-                    </IconButton>
-                    <IconButton color="secondary" aria-label="add an alarm">
-                        <PauseIcon />
-                    </IconButton>
-                    <IconButton color="secondary" aria-label="add an alarm">
-                        <SkipNextIcon />
-                    </IconButton>
+    }
+
+    public render(): JSX.Element {
+        return (
+            <div className="Controls">
+                <div className="Controls__Track">
+                    <div className="Controls__Track-Action">
+                        <IconButton className="" aria-label="add an alarm">
+                            <SkipPreviousIcon />
+                        </IconButton>
+                        <IconButton className="Action__Center" aria-label="Pause the current track" onClick={event => this.setPlayingState(event)}>
+                            {
+                                this.props.isPlaying ? <PauseIcon /> : <PlayArrowIcon />
+                            }
+                        </IconButton>
+                        <IconButton className="" aria-label="add an alarm">
+                            <SkipNextIcon />
+                        </IconButton>
+                    </div>
                 </div>
             </div>
-        </div>
-    )
-
+        )
+    }
 }
-
-const Controls = connect(null, mapDispatchToProps)(ControlsComponent)
-
-export default Controls

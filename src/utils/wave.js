@@ -19,6 +19,13 @@ const appendBuffer = (buffer1, buffer2, context) => {
 };
 
 
+/**
+ * @link please see https://www.codeproject.com/Articles/8295/MPEG-Audio-Frame-Header for mp3 header information
+ * @param {*} data 
+ * @param {*} numberOfChannels 
+ * @param {*} sampleRate 
+ */
+
 const withWaveHeader = (data, numberOfChannels, sampleRate) => {
   const header = new ArrayBuffer(44);
 
