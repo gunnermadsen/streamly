@@ -1,0 +1,4 @@
+git checkout master // switch to master branch
+git pull origin master // get the latest state of the master branch
+git merge <branch-name> // merge changes from <branch-name> to master
+git push origin master // push changes to remote repository
