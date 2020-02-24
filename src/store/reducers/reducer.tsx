@@ -1,26 +1,7 @@
 import * as types from '../types/action-types'
+import { IPlayerState } from '../../models/player.interface'
 
-export interface ISong {
-    name?: string
-}
 
-export interface IPlayerState {
-    playlist?: ISong[]
-    song?: ISong
-    volume?: number
-    isPlaying?: boolean
-    isSongSet?: boolean
-    addAllSongs?(action: any)
-    fetchPlaylist?()
-    setCurrentlyPlayingSong?(action: any)
-    setVolume?(volume: number)
-    nextTrack?(track: ISong)
-    previousTrack?(track: ISong)
-    setPlayingState?(state: boolean)
-
-}
-
-export interface IPlayerProps { }
 
 const initialState: IPlayerState = {
     playlist: [],

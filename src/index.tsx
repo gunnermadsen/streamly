@@ -6,7 +6,7 @@ import { createStore, applyMiddleware } from 'redux'
 import rootReducer from './store/reducers/reducer'
 import { composeWithDevTools } from 'redux-devtools-extension'
 import createSagaMiddleware from 'redux-saga'
-
+import * as serviceWorker from './serviceWorker'
 import './index.scss'
 import sagaInitializer from './store/effects/effects'
 
@@ -24,6 +24,8 @@ ReactDOM.render(
     </Provider>, 
     document.getElementById('root')
 )
+
+serviceWorker.register()
 
 module.hot.accept()
 

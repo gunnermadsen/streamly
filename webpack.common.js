@@ -86,6 +86,6 @@ module.exports = {
             filename: '[name].[hash].css',
             chunkFilename: '[id].css'
         }),
-        new webpack.ProgressPlugin((percentage, message, ...args) => console.info(`${percentage * 100}%`, message, ...args))
+        // new webpack.ProgressPlugin((percentage, message, ...args) => console.info(`${percentage * 100}%`, message, ...args))
     ]
 }

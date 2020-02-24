@@ -8,7 +8,8 @@ module.exports = merge(common, {
     devServer: {
         contentBase: './dist',
         hot: true,
-        open: false
+        open: false,
+        writeToDisk: true
     },
     plugins: [
         new webpack.HotModuleReplacementPlugin(),

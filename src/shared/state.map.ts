@@ -1,5 +1,5 @@
-import { IPlayerState } from "../store/reducers/reducer"
 import * as action from "../store/types/action-types"
+import { IPlayerState } from "../models/player.interface"
 
 
 export const mapStateToProps = (state: IPlayerState) => {
@@ -15,6 +15,7 @@ export const mapStateToProps = (state: IPlayerState) => {
 export const mapDispatchToProps = dispatch => {
     return {
         setCurrentlyPlayingSong: track      => dispatch({ type: action.SET_CURRENTLY_PLAYING_SONG, song: track }),
+                setAudioContext: ()         => dispatch({ type: action.SET_AUDIO_CONTEXT }),
                 setPlayingState: track      => dispatch({ type: action.SET_PLAYING_STATE, song: track }),
                   previousTrack: track      => dispatch({ type: action.PREVIOUS_TRACK, song: track }),
                   fetchPlaylist: ()         => dispatch({ type: action.FETCH_PLAYLIST }),

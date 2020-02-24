@@ -7,8 +7,9 @@ import { connect } from 'react-redux'
 
 import './Volume.scss'
 
-import { IPlayerState, IPlayerProps } from '../../store/reducers/reducer';
 import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map';
+import { IPlayerState } from '../../models/player.interface';
+import { IPlayerProps } from '../../models/player-state.interface';
 
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Volume extends Component<IPlayerState, IPlayerProps> {

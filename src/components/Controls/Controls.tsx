@@ -6,10 +6,11 @@ import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import IconButton from '@material-ui/core/IconButton'
 
 import { connect } from 'react-redux'
-import { IPlayerState, IPlayerProps } from '../../store/reducers/reducer';
 import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map';
 
 import './Controls.scss'
+import { IPlayerState } from '../../models/player.interface';
+import { IPlayerProps } from '../../models/player-state.interface';
 
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Controls extends Component<IPlayerState, IPlayerProps>{

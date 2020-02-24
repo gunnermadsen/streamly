@@ -6,9 +6,10 @@ import { connect } from 'react-redux'
 
 // import AudioStreamerUtility from '../../utils/player'
 
-import { IPlayerState, IPlayerProps } from '../../store/reducers/reducer'
 import './Playlist.scss'
 import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map'
+import { IPlayerState } from '../../models/player.interface'
+import { IPlayerProps } from '../../models/player-state.interface'
 // const audioStreamer = new AudioStreamerUtility()
 
 
@@ -18,6 +19,8 @@ export default class Playlist extends Component<IPlayerState, IPlayerProps> {
     public selectedIndex: number = 0
 
     private handleListItemClick (value: any, index: number, song: any) {
+
+        this.props.setAudioContext()
         
         this.props.setCurrentlyPlayingSong(song)
 

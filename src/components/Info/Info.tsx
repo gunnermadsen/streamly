@@ -1,14 +1,11 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 
-// import AudioStreamerUtility from '../../utils/player'
-
-import { IPlayerState, IPlayerProps } from '../../store/reducers/reducer'
-
 import './Info.scss'
 import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map'
+import { IPlayerState } from '../../models/player.interface'
+import { IPlayerProps } from '../../models/player-state.interface'
 
-// const audioStreamer = new AudioStreamerUtility()
 
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Info extends Component<IPlayerState, IPlayerProps> {
