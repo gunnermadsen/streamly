@@ -1,9 +1,8 @@
 import { call, put, takeEvery, all } from 'redux-saga/effects'
-// import { eventChannel } from 'redux-saga'
 import { PlaylistNetworkUtility } from '../../utils/streamer.util'
 import * as types from '../types/action-types'
 
-const streamingUtility = new PlaylistNetworkUtility()
+export const streamingUtility = new PlaylistNetworkUtility()
 
 const id = '5d2f818f81808747b77a8d17'
 

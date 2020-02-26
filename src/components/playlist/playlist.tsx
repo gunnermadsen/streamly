@@ -3,6 +3,7 @@ import List from '@material-ui/core/List'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemText from '@material-ui/core/ListItemText'
 import { connect } from 'react-redux'
+import * as d3 from 'd3'
 
 // import AudioStreamerUtility from '../../utils/player'
 
@@ -11,21 +12,72 @@ import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map'
 import { IPlayerState } from '../../models/player.interface'
 import { IPlayerProps } from '../../models/player-state.interface'
 // const audioStreamer = new AudioStreamerUtility()
-
+import {streamingUtility} from '../../store/effects/effects'
 
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Playlist extends Component<IPlayerState, IPlayerProps> {
 
     public selectedIndex: number = 0
+    public windowWidth: number = window.innerWidth - 10
+    public windowHeight: number = window.innerHeight - 100
+    private frequencyData: Uint8Array = null
+    private colorScale: any
+    private circleX: any
+    private svg: any
 
     private handleListItemClick (value: any, index: number, song: any) {
+
+        this.selectedIndex = index
 
         this.props.setAudioContext()
         
         this.props.setCurrentlyPlayingSong(song)
 
+        streamingUtility.getAnalyserData$().subscribe(
+            (frequencyData: Uint8Array) => this.graphAudioData(frequencyData)
+        )
+
     }
 
+    private graphAudioData(data: Uint8Array): void {
+        this.colorScale = d3.scaleLinear()
+            .domain([0, 150])
+            .range((["purple", "red", "green"]) as any)
+
+        this.circleX = d3.scaleLinear()
+            .domain([0, data.length])
+            .range([0, this.windowWidth])
+
+        this.svg = d3.select('#wave-container').append('svg')
+            .attr('width', this.windowWidth / 3)
+            .attr('height', 150)
+
+        let dots = this.svg.selectAll('circle')
+            .data(data)
+            .enter().append('circle')
+            .attr('r', (d: any) => this.windowWidth / data.length / 2 + .3)
+            .attr('cx', (d: any, i: any) => this.circleX(i))
+            .attr('cy', (d: any) => this.windowHeight / 2 - d)
+            .attr('fill', (d: any, i: any) => this.colorScale(d))
+
+        const drawChart = () => {
+
+            requestAnimationFrame(drawChart)
+
+            streamingUtility.setByteFrequencyData(data)
+
+            this.svg
+                .selectAll('circle')
+                .data(data)
+                .attr('cy', (d: any) => this.windowHeight / 2 - d)
+                .attr('fill', (d: any, i: any) => this.colorScale(d))
+        }
+
+        drawChart()
+    }
+
+
+    // can an svg element have child elements, or is it self-closing?
     public render() {
         return (
             <div className="Playlist__Container">
@@ -39,7 +91,9 @@ export default class Playlist extends Component<IPlayerState, IPlayerProps> {
                                     button 
                                     selected={this.selectedIndex === index} 
                                     onClick={event => this.handleListItemClick(event, index, song)}>
-                                    <ListItemText primary={song.name} />
+                                    <svg className="item__graph">
+                                        <text x="20" y="45" className="item__title">{song.name}</text>
+                                    </svg>
                                 </ListItem>
                             )
                         })

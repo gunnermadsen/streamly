@@ -33,6 +33,15 @@ module.exports = {
     module: {
         rules: [
             {
+                test: /\.worker\.js$/,
+                use: {
+                    loader: 'worker-loader',
+                    options: {
+                        name: 'worker.[hash].js'
+                    }
+                }
+            },
+            {
                 test: /\.js$/,
                 use: [
                     'babel-loader',

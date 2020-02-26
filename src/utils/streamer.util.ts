@@ -4,6 +4,9 @@ import ss from 'socket.io-stream'
 import socketClient from "socket.io-client"
 import { ISong } from "../models/track.interface"
 import { TextDecoder } from 'text-encoding'
+
+import { Observable, BehaviorSubject } from 'rxjs'
+
 export class PlaylistNetworkUtility {
 
     public source: AudioBufferSourceNode = null
@@ -19,6 +22,8 @@ export class PlaylistNetworkUtility {
     public socket: SocketIOClient.Socket = null
     private isStreamFinished: boolean = false
     private loggerUtility = new LoggerUtility()
+    private frequencyData$: BehaviorSubject<Uint8Array> = new BehaviorSubject<Uint8Array>(null)
+
 
     constructor() {
         this.loggerUtility.logEvent('**** AudioStreamerUtility constructor()')
@@ -40,6 +45,10 @@ export class PlaylistNetworkUtility {
         } catch (error) {
             throw error
         }
+    }
+
+    public getAnalyserData$(): Observable<Uint8Array> {
+        return this.frequencyData$
     }
 
     public watchForTrackStream(): void {
@@ -130,6 +139,12 @@ export class PlaylistNetworkUtility {
             this.loggerUtility.logEvent('---> creating audio buffer chunks using frames from audio data chunks')
             this.createBufferSource(buffer)
 
+            const analyserData = new Uint8Array(this.analyser.frequencyBinCount)
+
+            this.setByteFrequencyData(analyserData)
+            
+            this.frequencyData$.next(analyserData)
+
             // this.source.onended = () => console.log("Song has stopped playing")
             const loadRate = (data.length * 100) / stat.size
 
@@ -157,6 +172,10 @@ export class PlaylistNetworkUtility {
             this.reset()
             throw error
         }
+    }
+
+    public setByteFrequencyData(data: Uint8Array) {
+        this.analyser.getByteFrequencyData(data)
     }
 
     private appendBuffer(buffer1: any, buffer2: any): AudioBuffer {
@@ -370,6 +389,7 @@ export class PlaylistNetworkUtility {
 
         this.loggerUtility.logEvent('---> connecting audiocontext destination to gain node')
         this.source.connect(this.analyser)
+
         this.source.start(0, resumeTime)
     }
 

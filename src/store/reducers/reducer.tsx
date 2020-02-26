@@ -14,7 +14,6 @@ const initialState: IPlayerState = {
 }
 
 
-
 export default function rootReducer(state = initialState, action) {
 
     switch (action.type) {
