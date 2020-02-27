@@ -14,5 +14,6 @@ export interface IPlayerState {
     nextTrack?(track: ISong)
     previousTrack?(track: ISong)
     setPlayingState?(state: boolean)
+    stopStreaming?()
 
 }
