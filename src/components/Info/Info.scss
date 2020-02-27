@@ -1,11 +1,15 @@
 
 .Info {
 
+    width: 80%;
+    height: 90%;
+
     &__Enclosure {
 
-        height: 60px;  
+        height: 100%;  
         overflow: hidden;
         position: relative;
+        margin: auto;
 
         &-Banner {
             font-size: 1em;
@@ -14,21 +18,35 @@
             width: 100%;
             height: 100%;
             margin: 0;
-            line-height: 50px;
+            // line-height: 50px;
             text-align: center;
             /* Starting position */
             -webkit-transform: translateX(100%);    
                -moz-transform: translateX(100%);
                     transform: translateX(100%);
             /* Apply animation to this element */  
-            -webkit-animation: TrackBanner 15s linear infinite;
-               -moz-animation: TrackBanner 15s linear infinite;
-                    animation: TrackBanner 15s linear infinite;
+            -webkit-animation: TrackBanner 20s linear infinite;
+               -moz-animation: TrackBanner 20s linear infinite;
+                    animation: TrackBanner 20s linear infinite;
         }
 
     }
 
 }
+
+.Artwork {
+    width: 100%;
+    height: auto;
+}
+
+
+.Ellipse__Temp {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; 
+}
+
 
 /* Move it (define the animation) */
 @-moz-keyframes TrackBanner {

@@ -33,6 +33,15 @@ module.exports = {
     module: {
         rules: [
             {
+                test: /\.worker\.js$/,
+                use: {
+                    loader: 'worker-loader',
+                    options: {
+                        name: 'worker.[hash].js'
+                    }
+                }
+            },
+            {
                 test: /\.js$/,
                 use: [
                     'babel-loader',
@@ -70,6 +79,16 @@ module.exports = {
                     'css-loader',
                     'sass-loader'
                 ]
+            },
+            {
+                test: /\.(png|jpe?g|gif|svg)$/,
+                use: {
+                    loader: 'file-loader',
+                    options: {
+                        name: '[name].[ext]'
+                    }
+                }
+
             }
         ]
     },

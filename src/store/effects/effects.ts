@@ -1,9 +1,8 @@
 import { call, put, takeEvery, all } from 'redux-saga/effects'
-// import { eventChannel } from 'redux-saga'
 import { PlaylistNetworkUtility } from '../../utils/streamer.util'
 import * as types from '../types/action-types'
 
-const streamingUtility = new PlaylistNetworkUtility()
+export const streamingUtility = new PlaylistNetworkUtility()
 
 const id = '5d2f818f81808747b77a8d17'
 
@@ -43,10 +42,20 @@ function* initiateSocketStream(action) {
     }
 }
 
+function* setVolume(action) {
+    try {
+        yield call(() => streamingUtility.setVolume(action))
+    }
+    catch (error) {
+        yield put({ type: types.SET_VOLUME_FAILED, message: error })
+    }
+}
+
 export default function* sagaInitializer() {
     yield all([
         takeEvery(types.FETCH_PLAYLIST, fetchPlaylist),
         takeEvery(types.SET_CURRENTLY_PLAYING_SONG, initiateSocketStream),
-        takeEvery(types.SET_AUDIO_CONTEXT, startAudioContext)
+        takeEvery(types.SET_AUDIO_CONTEXT, startAudioContext),
+        takeEvery(types.SET_VOLUME, setVolume)
     ])
 }

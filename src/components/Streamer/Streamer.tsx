@@ -48,6 +48,12 @@ export default class Streamer extends Component<IPlayerState, IPlayerProps> {
             </div>
         )
     }
+
+    // componentWillUnmount() {
+    //     if (this.props.isPlaying) {
+    //         this.props.stopStreaming()
+    //     }
+    // }
 }
 
 // export default connect(mapStateToProps, mapDispatchToProps)(Streamer)

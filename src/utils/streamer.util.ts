@@ -3,7 +3,10 @@ import { LoggerUtility } from "./logger"
 import ss from 'socket.io-stream'
 import socketClient from "socket.io-client"
 import { ISong } from "../models/track.interface"
-import { TextDecoder } from 'text-encoding'
+
+import { Observable, BehaviorSubject } from 'rxjs'
+import { Action } from "@redux-saga/core/node_modules/redux"
+
 export class PlaylistNetworkUtility {
 
     public source: AudioBufferSourceNode = null
@@ -15,18 +18,24 @@ export class PlaylistNetworkUtility {
     public playWhileLoadingDuration: number = 0
     public audioContext: AudioContext = null
     public analyser: AnalyserNode = null
-    public gainNode: GainNode = null
+    private _gainNode: GainNode = null
     public socket: SocketIOClient.Socket = null
     private isStreamFinished: boolean = false
     private loggerUtility = new LoggerUtility()
+    private frequencyData$: BehaviorSubject<Uint8Array> = new BehaviorSubject<Uint8Array>(null)
+
+    public set gainNode(value: number) {
+
+        this._gainNode.gain.value = value
+
+    }
+
 
     constructor() {
-        this.loggerUtility.logEvent('**** AudioStreamerUtility constructor()')
 
         this.socket = socketClient(environment.socketUrl)
 
         this.watchForTrackStream()
-        this.loggerUtility.logEvent('---> AudioStreamerUtility started')
     }
     
     public async fetchPlaylist(): Promise<ISong[]>  {
@@ -42,25 +51,27 @@ export class PlaylistNetworkUtility {
         }
     }
 
+    public getAnalyserData$(): Observable<Uint8Array> {
+        return this.frequencyData$
+    }
+
     public watchForTrackStream(): void {
-        this.loggerUtility.logEvent('**** watchForTrackStream()')
 
-        ss(this.socket).on('stream', (stream, { stat, mode, meta }) => {
-
-            this.loggerUtility.logEvent('---> socket stream received, waiting for binary stream')
+        ss(this.socket).on('stream', (stream, payload: { stat: any, meta: any, mode: string }) => {
 
             stream.on('data', data => {
-                this.setAudioBuffer(data, stat)
+                this.setAudioBuffer(data, payload.stat)
             })
 
-            stream.on('close', () => {
-                this.loggerUtility.logEvent("---> 'close' event emitted from the server")
+            stream.on('cancel', () => {
+                this.loggerUtility.logEvent("---> 'cancel' event emitted from the server")
+                this.stop()
             })
 
-            stream.on('end', () => {
-                this.loggerUtility.logEvent("---> 'end' event emitted from the server")
-                console.log("End event emitted, no more data to consume from the stream")
+            stream.on('complete', () => {
+                this.loggerUtility.logEvent("---> 'complete' event emitted from the server")
                 this.isStreamFinished = true
+                this.stop()
             })
 
             stream.on('error', (error) => {
@@ -86,14 +97,11 @@ export class PlaylistNetworkUtility {
     }
 
     public setLoadingInterval(): void {
-        this.loggerUtility.logEvent('**** emitEvent()')
 
         if (this.startAt) {
             const inSec = (Date.now() - this.startAt) / 1000
 
             if (this.playWhileLoadingDuration && inSec >= this.playWhileLoadingDuration) {
-
-                this.loggerUtility.logEvent('---> calling playWhileLoading() with duration')
                 this.playWhileLoading(this.playWhileLoadingDuration)
 
                 this.playWhileLoadingDuration = this.source.buffer.duration
@@ -102,33 +110,32 @@ export class PlaylistNetworkUtility {
         } else if (this.source) {
             this.playWhileLoadingDuration = this.source.buffer.duration
             this.startAt = Date.now()
-
-            this.loggerUtility.logEvent('---> calling playWhileLoading() without duration')
             this.playWhileLoading()
         }
     }
 
     private async setAudioBuffer(data: Uint8Array, stat: any): Promise<void> {
-        this.loggerUtility.logEvent('**** setAudioBuffer()')
 
         let buffer: AudioBuffer
         const setWhileLoadingInterval = setInterval(this.setLoadingInterval.bind(this), 250)
 
         try {
-            this.loggerUtility.logEvent('---> creating audio buffer chunks using frames from audio data chunks')
             const audioBufferChunk = await this.audioContext.decodeAudioData(this.withWaveHeader(data, 2, 44100)) //this.generateMp3Headers(data)
 
             if (this.source && this.source.buffer) {
-                this.loggerUtility.logEvent('---> appending new buffer to existing buffer')
                 buffer = this.appendBuffer(this.source.buffer, audioBufferChunk)
             }
             else {
-                this.loggerUtility.logEvent('---> but the buffer and source are not set, so setting AudioBuffer to the buffer chunk')
                 buffer = audioBufferChunk
             }
 
-            this.loggerUtility.logEvent('---> creating audio buffer chunks using frames from audio data chunks')
             this.createBufferSource(buffer)
+
+            const analyserData = new Uint8Array(this.analyser.frequencyBinCount)
+
+            this.setByteFrequencyData(analyserData)
+            
+            this.frequencyData$.next(analyserData)
 
             // this.source.onended = () => console.log("Song has stopped playing")
             const loadRate = (data.length * 100) / stat.size
@@ -148,7 +155,8 @@ export class PlaylistNetworkUtility {
                 this.play(inSec)
             }
 
-            this.loggerUtility.logEvent(`-----> The current length of the source buffer is ${this.source.buffer.length}`)
+            // this.loggerUtility.logEvent(`-----> The current length of the source buffer is: ${this.source.buffer.length}`)
+            // this.loggerUtility.logObject(`-----> The file metadata is `, stat)
 
             // if (this.source.buffer.length === )
 
@@ -159,15 +167,15 @@ export class PlaylistNetworkUtility {
         }
     }
 
+    public setByteFrequencyData(data: Uint8Array) {
+        this.analyser.getByteFrequencyData(data)
+    }
+
     private appendBuffer(buffer1: any, buffer2: any): AudioBuffer {
-        this.loggerUtility.logEvent('**** appendBuffer()')
         
-        this.loggerUtility.logEvent('---> setting the number of channels using the provided buffers')
         const numberOfChannels = Math.min(buffer1.numberOfChannels, buffer2.numberOfChannels)
-        this.loggerUtility.logEvent('---> creating a temporary buffer')
         const tmp = this.audioContext.createBuffer(numberOfChannels, (buffer1.length + buffer2.length), buffer1.sampleRate)
 
-        this.loggerUtility.logEvent(`iterating over the numberOfChannels, channelCount is set to: ${numberOfChannels}`)
         for (let i = 0; i < numberOfChannels; i++) {
             const channel = tmp.getChannelData(i)
             channel.set(buffer1.getChannelData(i), 0)
@@ -267,44 +275,39 @@ export class PlaylistNetworkUtility {
     }
 
     public setAudioContext(): void {
-        this.loggerUtility.logEvent('**** setAudioContext()')
 
         this.audioContext = new AudioContext()
-        this.gainNode = this.audioContext.createGain()
+        this._gainNode = this.audioContext.createGain()
         this.analyser = this.audioContext.createAnalyser()
 
-        // this.gainNode.gain.value = 0.4
-        this.loggerUtility.logEvent('----> Audio context created')
+        this._gainNode.gain.value = 0.4
 
     }
     
     public play(resumeTime: number = 0): void {
-        this.loggerUtility.logEvent('**** play()')
 
         this.createBufferSource(this.audioBuffer)
 
         this.source.connect(this.audioContext.destination)
 
-        this.source.connect(this.gainNode)
+        this.source.connect(this._gainNode)
 
-        this.gainNode.connect(this.audioContext.destination)
+        this._gainNode.connect(this.audioContext.destination)
 
-        this.loggerUtility.logEvent('---> connecting audiocontext destination to gain node')
         this.source.connect(this.analyser)
+
         this.source.start(0, resumeTime)
+
     }
 
     public stop(): void {
-        this.loggerUtility.logEvent('**** stop()')
         this.source.stop(0)
     }
 
     public reset(): void {
-        this.loggerUtility.logEvent('**** reset()')
-        this.loggerUtility.logEvent('---> closing audiocontext and resetting properties')
         // await this.audioContext.close()
         this.source.disconnect()
-        this.gainNode.disconnect()
+        this._gainNode.disconnect()
         this.analyser.disconnect()
 
         // this.audioContext = null
@@ -317,15 +320,14 @@ export class PlaylistNetworkUtility {
         this.emitEvent('cancel', {})
     }
 
-    public setVolume(level: number): void {
-        this.loggerUtility.logEvent('**** setVolume()')
-        this.loggerUtility.logEvent('---> setting volume using gainNode and current time of audiocontext')
+    public setVolume(action: { type: string, volume: number }): void {
 
-        this.gainNode.gain.setValueAtTime(level, this.audioContext.currentTime)
+        this.gainNode = action.volume
+        this._gainNode.gain.setValueAtTime(action.volume, this.audioContext.currentTime)
     }
 
+
     public playWhileLoading(duration = 0): void {
-        this.loggerUtility.logEvent('**** playWhileLoading()')
 
         // if (!this.isStreamFinished) {
             try {
@@ -334,23 +336,18 @@ export class PlaylistNetworkUtility {
     
                 this.source.connect(this.audioContext.destination)
     
-                this.source.connect(this.gainNode)
+                this.source.connect(this._gainNode)
     
                 this.source.connect(this.analyser)
     
-                this.loggerUtility.logEvent('---> setting starting position and duration to AudioBufferSourceNode')
                 this.source.start(0, duration)
 
-                this.loggerUtility.logEvent('---> setting AudioBufferSourceNode to activeSource ')
                 this.activeSource = this.source
 
             } catch (error) {
-                this.loggerUtility.logError('---> but an error occured')
                 this.reset()
                 throw error
             }
         // }
-        // drawFrequency()
-        // drawSinewave()
     }
 }
