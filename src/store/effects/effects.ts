@@ -58,25 +58,10 @@ function* initializeAudioContext(action: any) {
     }
 }
 
-function* setPreviousTrack(action: any) {
+function* setTrack(action: any) {
     try {
 
-        yield call(() => streamingUtility.setPreviousTrack(action))
-
-        yield put({ type: types.SET_CURRENTLY_PLAYING_SONG, song: action.song })
-
-    } 
-    catch (error) {
-
-        yield put({ type: types.SET_PREVIOUS_TRACK_FAILED })
-        
-    }
-}
-
-function* setNextTrack(action: any) {
-    try {
-
-        yield call(() => streamingUtility.setNextTrack(action))
+        yield call(() => streamingUtility.setTrack(action))
 
         yield put({ type: types.SET_CURRENTLY_PLAYING_SONG, song: action.song })
         
@@ -110,8 +95,7 @@ export default function* sagaInitializer() {
         takeEvery(types.SET_CURRENTLY_PLAYING_SONG, setPlayingSong),
         takeEvery(types.SET_VOLUME, setVolume),
         takeEvery(types.SET_PLAYING_STATE, setPlayingState),
-        takeEvery(types.PREVIOUS_TRACK, setPreviousTrack),
-        takeEvery(types.NEXT_TRACK, setNextTrack),
+        takeEvery([ types.PREVIOUS_TRACK, types.NEXT_TRACK ], setTrack),
         takeEvery(types.UPLOAD_FILE, uploadFile)
     ])
 }

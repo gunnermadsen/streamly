@@ -160,17 +160,15 @@ export class PlaylistNetworkUtility {
     
     private play(buffer: AudioBuffer): void {
 
-        let offset = this.pausedAt
-
         this.source = this.audioContext.createBufferSource()
         this.source.buffer = buffer
         this.source.onended = () => console.log("song has ended")
         this.source.connect(this.audioContext.destination)
         this.source.connect(this.analyser)
         this.source.connect(this.gainNode)
-        this.source.start(0, offset)
+        this.source.start(0, this.pausedAt)
 
-        this.startedAt = this.audioContext.currentTime - offset
+        this.startedAt = this.audioContext.currentTime - this.pausedAt
     }
 
     private configureAnalyser(): void {
@@ -225,20 +223,16 @@ export class PlaylistNetworkUtility {
     }
     
 
-    public setPreviousTrack(action: any): void {
+    public setTrack(action: any): void {
         this.source = null
-        this.analyser = null
-        this.gainNode = null
-        this.frequencyData = null
-
+        this.source.disconnect(this.analyser)
+        this.source.disconnect(this.gainNode)
+        this.frequencyData = null        
         this.fetchAudioData(action)
-        this.audioElementRef.src = `${env.apiUrl}/repository/${env.userId}/${action.song.name}`
+        // this.audioElementRef.src = `${env.apiUrl}/repository/${env.userId}/${action.song.name}`
     }
 
-    public setNextTrack(action: any): void {
-        this.audioElementRef.src = `${env.apiUrl}/repository/${env.userId}/${action.song.name}`
-    }
-    
+ 
     public setVolume(action: { type: string, volume: number }): void {
 
         this.gainNodeSubject$.next(null)
