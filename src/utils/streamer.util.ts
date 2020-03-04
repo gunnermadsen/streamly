@@ -157,14 +157,8 @@ export class PlaylistNetworkUtility {
         }
     }
 
-<<<<<<< Updated upstream
     
-
-    private createBufferSource(buffer: AudioBuffer): void {
-        this.source = this.audioContext.createBufferSource()
-=======
     private play(buffer: AudioBuffer): void {
->>>>>>> Stashed changes
 
         let offset = this.pausedAt
 
