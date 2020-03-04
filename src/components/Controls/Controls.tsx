@@ -5,28 +5,49 @@ import PauseIcon from '@material-ui/icons/Pause'
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import IconButton from '@material-ui/core/IconButton'
 
+import './Controls.scss'
+
 import { connect } from 'react-redux'
 import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map';
+import { environment as env } from '../../environment/environment'
 
-import './Controls.scss'
 import { IPlayerState } from '../../models/player.interface';
 import { IPlayerProps } from '../../models/player-state.interface';
 
+import { streamingUtility } from '../../store/effects/effects'
+
+
 @connect(mapStateToProps, mapDispatchToProps)
-export default class Controls extends Component<IPlayerState, IPlayerProps>{
+export default class Controls extends Component<IPlayerState, IPlayerProps> {
 
     public setPlayingState(event: any): void {
 
-        // if ()
+        // if the play button is clicked, and a song has NOT been set, 
+        // dispatch an action to play the first song, then exit the method
+        if (!this.props.isSongSet) {
+
+            this.props.setCurrentlyPlayingSong(this.props.playlist[0])
+            streamingUtility.audioElementRef.src = `${env.apiUrl}/repository/${env.userId}/${this.props.playlist[0].name}`
+
+            return 
+        }
 
         const isPlaying = !this.props.isPlaying
 
-        const message = this.props.isPlaying ? "Song is playing" : "Song is paused"
-
-        console.log(message)
-
         this.props.setPlayingState(isPlaying)
 
+    }
+
+    public playPreviousSong(): void {
+        const track = this.props.playlist[this.props.selectedIndex - 1]
+
+        this.props.previousTrack(track)
+    }
+
+    public playNextSong(): void {
+        const track = this.props.playlist[this.props.selectedIndex + 1]
+        
+        this.props.nextTrack(track)
     }
 
     public render(): JSX.Element {
@@ -34,15 +55,15 @@ export default class Controls extends Component<IPlayerState, IPlayerProps>{
             <div className="Controls">
                 <div className="Controls__Track">
                     <div className="Controls__Track-Action">
-                        <IconButton className="" aria-label="add an alarm">
+                        <IconButton className="" color="primary" aria-label="add an alarm" onClick={() => this.playPreviousSong()}>
                             <SkipPreviousIcon />
                         </IconButton>
-                        <IconButton className="Action__Center" aria-label="Pause the current track" onClick={event => this.setPlayingState(event)}>
+                        <IconButton className="Action__Center" color="primary" aria-label="Pause the current track" onClick={event => this.setPlayingState(event)}>
                             {
                                 this.props.isPlaying ? <PauseIcon /> : <PlayArrowIcon />
                             }
                         </IconButton>
-                        <IconButton className="" aria-label="add an alarm">
+                        <IconButton className="" color="primary" aria-label="add an alarm" onClick={() => this.playNextSong()}>
                             <SkipNextIcon />
                         </IconButton>
                     </div>

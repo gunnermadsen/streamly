@@ -1,43 +1,39 @@
-import React, { useEffect, useState, Component } from 'react'
-import CloudUploadIcon from '@material-ui/icons/CloudUpload';
-import IconButton from '@material-ui/core/IconButton';
-import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
-import { connect } from 'socket.io-client';
 import './Uploader.scss'
+import React, { Component, createRef, RefObject } from 'react'
+import { connect } from 'react-redux'
 
-class UploaderComponent extends Component {
+import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map'
+import { IPlayerProps } from '../../models/player-state.interface'
+import { IPlayerState } from '../../models/player.interface'
+import Button from '@material-ui/core/Button'
 
-    private uploadRef = React.createRef()
+@connect(mapStateToProps, mapDispatchToProps)
+export default class Uploader extends Component<IPlayerState, IPlayerProps> {
 
-    uploadFile(event) {
-        console.log(event)
+    private uploadRef: RefObject<HTMLInputElement>
+
+    public uploadFile() {
+        this.uploadRef.current.click()
+
+        // this.uploadRef.current.onchange = (event: any) => {
+        //     return this.props.uploadFile(event.target.files)
+        // }
     }
-    useStyles(): any {
-        return makeStyles((theme: Theme) => createStyles({
-            margin: {
-                margin: theme.spacing(1),
-            },
-            extendedIcon: {
-                marginRight: theme.spacing(1),
-            },
-        }));
+
+    public componentDidMount() {
+        this.uploadRef = createRef()
     }
 
-    render() {
-        const classes = this.useStyles();
-
+    public render() {
         return (
-            <div>
-                <IconButton aria-label="delete" className={classes.margin} onClick={event => this.uploadFile(event)} size="small">
+            <div className="Uploader">
+                {/* <IconButton aria-label="delete" className="Uploader__Main" onClick={event => this.uploadFile(event)} size="small">
                     <CloudUploadIcon fontSize="inherit" />
-                </IconButton>
+                </IconButton> */}
+                <Button onClick={() => this.uploadFile()} variant="contained" color="primary">Upload</Button>
+                <input hidden multiple type="file" ref={this.uploadRef} />
             </div>
         )
     }
     
 }
-
-// const Uploader = connect(mapStateToProps)(UploaderComponent)
-
-export default UploaderComponent
-

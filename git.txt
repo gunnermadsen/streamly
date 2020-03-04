@@ -1,4 +1,14 @@
+// Git Commands
+
+############## merge changes to master branch ################
 git checkout master // switch to master branch
 git pull origin master // get the latest state of the master branch
 git merge <branch-name> // merge changes from <branch-name> to master
 git push origin master // push changes to remote repository
+
+
+############## stash and apply changes to new/existing branch ################
+git stash
+git checkout [-b] <branch>
+git stash apply
+

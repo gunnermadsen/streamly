@@ -1,5 +1,6 @@
 import * as types from '../types/action-types'
 import { IPlayerState } from '../../models/player.interface'
+import { ISong } from '../../models/track.interface'
 
 
 
@@ -10,8 +11,15 @@ const initialState: IPlayerState = {
     },
     volume: 28,
     isPlaying: false,
-    isSongSet: false
+    isSongSet: false, 
+    selectedIndex: null
 }
+
+const findIndex = (state: IPlayerState, action: any) => 
+    state.playlist.findIndex(
+        (song: ISong) => 
+            song === action.song
+    )
 
 
 export default function rootReducer(state = initialState, action) {
@@ -24,12 +32,27 @@ export default function rootReducer(state = initialState, action) {
             }
         }
         case types.SET_CURRENTLY_PLAYING_SONG: {
+
+            const index = findIndex(state, action)
+
             return {
                 ...state,
                 song: action.song,
                 isPlaying: true,
-                isSongSet: true
+                isSongSet: true,
+                selectedIndex: index
             }
+
+        }
+        case types.ADD_UPLOADED_TRACK_TO_PLAYLIST: {
+
+            const playlist = [ ...state.playlist, action.track ]
+
+            return {
+                ...state,
+                playlist: playlist
+            }
+            
         }
         case types.SET_VOLUME: {
             return {

@@ -21,6 +21,9 @@ export default class Info extends Component<IPlayerState, IPlayerProps> {
                     <div className="Info__Enclosure-Title"> 
                         <h5 className="Ellipse__Temp">{this.props.song.name}</h5> {/* Info__Enclosure-Banner */}
                     </div> 
+                    <div className="Info__Enclosure-Scrubber">
+                        
+                    </div>
                 </div>
             )
         } 

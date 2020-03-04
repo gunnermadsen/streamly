@@ -1,5 +1,16 @@
 @import '../../index';
 
+// svg graph styles
+
+.led-border {
+    color: black;
+
+    line { stroke-width: 0.2; }
+    path { stroke-width: 0; }
+
+}
+
+
 
 .Playlist__Container {
     @extend %container;
@@ -23,6 +34,7 @@ ul {
         }
 
         &-item {
+            position: relative;
             height: 90px;
         }
 
@@ -34,16 +46,14 @@ ul {
 
         }
 
-        
-
     }
     
 }
 
-.item__graph {
-    position: relative;
-    width: 100%;
-    height: 100%;
+.item__label {
+    position: absolute;
+    top: 35%;
+    left: 20px;
 }
 
 // .item__title {
@@ -56,6 +66,8 @@ ul {
 
 .MuiListItem-root {
     max-width: 65vw;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 .MuiList-padding {
@@ -64,5 +76,10 @@ ul {
 }
 
 .MuiList-root {
-    height: 85vh;
+    height: 70vh;
+}
+
+.MuiListItem-gutters {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }

@@ -1,355 +1,254 @@
-import { environment } from "../environment/environment"
-import { LoggerUtility } from "./logger"
-import ss from 'socket.io-stream'
-import socketClient from "socket.io-client"
-import { ISong } from "../models/track.interface"
-
 import { Observable, BehaviorSubject } from 'rxjs'
-import { Action } from "@redux-saga/core/node_modules/redux"
+import { ISong } from '../models/track.interface'
+import { HttpPlayerUtility } from './player.http.util'
+import { environment as env } from '../environment/environment'
+
+interface IUpload {
+    loaded: number
+    total: number
+}
 
 export class PlaylistNetworkUtility {
 
-    public source: AudioBufferSourceNode = null
-    public audioBuffer: AudioBuffer = null
-    public activeSource: AudioBufferSourceNode = null
-    public startAt: number = 0
-    public rate: number = 0
-    private duration: number = 0
-    public playWhileLoadingDuration: number = 0
-    public audioContext: AudioContext = null
-    public analyser: AnalyserNode = null
-    private _gainNode: GainNode = null
-    public socket: SocketIOClient.Socket = null
-    private isStreamFinished: boolean = false
-    private loggerUtility = new LoggerUtility()
-    private frequencyData$: BehaviorSubject<Uint8Array> = new BehaviorSubject<Uint8Array>(null)
-
-    public set gainNode(value: number) {
-
-        this._gainNode.gain.value = value
-
+    /**
+     * The AudioContext Behavior Subject. Provides an Observable for the AudioContext API
+     */
+    private audioContextSubject$ = new BehaviorSubject<AudioContext>(null)
+    public get audioContext(): AudioContext { 
+        return this.audioContextSubject$.value
     }
 
 
-    constructor() {
-
-        this.socket = socketClient(environment.socketUrl)
-
-        this.watchForTrackStream()
+    /**
+     * The AnalyserNode Behavior Subject. Provides an Observable for the AnalyserNode API
+     */
+    private analyserSubject$ = new BehaviorSubject<AnalyserNode>(null)
+    public get analyser(): AnalyserNode {
+        return this.analyserSubject$.value
     }
+    public set analyser(value: AnalyserNode) {
+        this.analyserSubject$.next(value)
+    }
+    public get analyser$(): Observable<AnalyserNode> {
+        return this.analyserSubject$.asObservable()
+    }
+
+
+    /**
+     * The Uint8Array Behavior Subject for Frequency Data. Provides an Observable for the Frequency data obtained from the AnalyserNode API
+     */ 
+    private frequencyDataSubject$ = new BehaviorSubject<Uint8Array>(null)
+    public get frequencyData$(): Observable<Uint8Array> {
+        return this.frequencyDataSubject$.asObservable()
+    }
+    public set frequencyData(value: Uint8Array) {
+        this.frequencyDataSubject$.next(value)
+    }
+
+
+    /**
+     * The GainNode Behavior Subject. Provides an Observable for the GainNode API
+     */
+    private gainNodeSubject$ = new BehaviorSubject<GainNode>(null)
+    public get gainNode(): GainNode {
+        return this.gainNodeSubject$.value
+    }
+    public set gainNode(value: GainNode) {
+        this.gainNodeSubject$.next(value)
+    }
+
     
-    public async fetchPlaylist(): Promise<ISong[]>  {
-        try {
-            const response = await fetch(`${environment.apiUrl}/api/playlist?id=5d2f818f81808747b77a8d17`, { method: 'GET' })
-
-            const playlist = await response.json()
-
-            return playlist
-
-        } catch (error) {
-            throw error
-        }
+    /**
+     * The GainNode Behavior Subject. Provides an Observable for the GainNode API
+     */ 
+    private sourceNodeSubject$ = new BehaviorSubject<AudioBufferSourceNode>(null)
+    public get sourceNode(): AudioBufferSourceNode {
+        return this.source
+    }
+    public get sourceNode$(): Observable<AudioBufferSourceNode> {
+        return this.sourceNodeSubject$.asObservable()
+    }
+    public set sourceNode(value: AudioBufferSourceNode | null) {
+        this.sourceNodeSubject$.next(value)
     }
 
-    public getAnalyserData$(): Observable<Uint8Array> {
-        return this.frequencyData$
+
+    /**
+     * The GainNode Behavior Subject. Provides an Observable for the GainNode API
+     */
+    private fileUploadProgressSubject$ = new BehaviorSubject<IUpload>({ loaded: 0, total: 0})
+    public get fileUploadProgress$(): Observable<IUpload> {
+        return this.fileUploadProgressSubject$.asObservable()
+    }
+    public set fileUploadProgressSubject(value: IUpload) {
+        this.fileUploadProgressSubject$.next(value)
     }
 
-    public watchForTrackStream(): void {
+    private audioElement: HTMLMediaElement = null 
+    private source: AudioBufferSourceNode = null
+    private startedAt = 0
+    private pausedAt = 0
 
-        ss(this.socket).on('stream', (stream, payload: { stat: any, meta: any, mode: string }) => {
 
-            stream.on('data', data => {
-                this.setAudioBuffer(data, payload.stat)
-            })
-
-            stream.on('cancel', () => {
-                this.loggerUtility.logEvent("---> 'cancel' event emitted from the server")
-                this.stop()
-            })
-
-            stream.on('complete', () => {
-                this.loggerUtility.logEvent("---> 'complete' event emitted from the server")
-                this.isStreamFinished = true
-                this.stop()
-            })
-
-            stream.on('error', (error) => {
-                console.log("an error occured while streaming data")
-                this.loggerUtility.logObject('---> An error occured', error)
-                this.reset()
-            })
-
-        })
-
-        this.socket.on('cancel', (error) => {
-            this.loggerUtility.logEvent('---> socket emitted cancel event')
-        })
-
-        this.socket.on('error', (error) => {
-            this.loggerUtility.logObject('---> an error occured', error)
-            this.reset()
-        })
+    // note: May not need this accessor. 
+    // test for reference to htmlmediaelement in initializeAudioContext method below
+    public get audioElementRef(): HTMLMediaElement {
+        return this.audioElement
     }
-
-    public emitEvent(event: string, data: any): void {
-        this.socket.emit(event, data)
+    public set audioElementRef(value: HTMLMediaElement) {
+        this.audioElement = value
+        // this.mediaStream = value.captureStream()
     }
-
-    public setLoadingInterval(): void {
-
-        if (this.startAt) {
-            const inSec = (Date.now() - this.startAt) / 1000
-
-            if (this.playWhileLoadingDuration && inSec >= this.playWhileLoadingDuration) {
-                this.playWhileLoading(this.playWhileLoadingDuration)
-
-                this.playWhileLoadingDuration = this.source.buffer.duration
-
-            }
-        } else if (this.source) {
-            this.playWhileLoadingDuration = this.source.buffer.duration
-            this.startAt = Date.now()
-            this.playWhileLoading()
-        }
-    }
-
-    private async setAudioBuffer(data: Uint8Array, stat: any): Promise<void> {
-
-        let buffer: AudioBuffer
-        const setWhileLoadingInterval = setInterval(this.setLoadingInterval.bind(this), 250)
-
-        try {
-            const audioBufferChunk = await this.audioContext.decodeAudioData(this.withWaveHeader(data, 2, 44100)) //this.generateMp3Headers(data)
-
-            if (this.source && this.source.buffer) {
-                buffer = this.appendBuffer(this.source.buffer, audioBufferChunk)
-            }
-            else {
-                buffer = audioBufferChunk
-            }
-
-            this.createBufferSource(buffer)
-
-            const analyserData = new Uint8Array(this.analyser.frequencyBinCount)
-
-            this.setByteFrequencyData(analyserData)
-            
-            this.frequencyData$.next(analyserData)
-
-            // this.source.onended = () => console.log("Song has stopped playing")
-            const loadRate = (data.length * 100) / stat.size
-
-            this.rate = this.rate + loadRate
-
-            if (this.rate >= 100) {
-
-                clearInterval(setWhileLoadingInterval)
-
-                this.audioBuffer = this.source.buffer
-
-                const inSec = (Date.now() - this.startAt) / 1000
-
-                this.activeSource.stop()
-
-                this.play(inSec)
-            }
-
-            // this.loggerUtility.logEvent(`-----> The current length of the source buffer is: ${this.source.buffer.length}`)
-            // this.loggerUtility.logObject(`-----> The file metadata is `, stat)
-
-            // if (this.source.buffer.length === )
-
-        } catch (error) {
-            this.loggerUtility.logError('---> but an error occured, so triggering reset')
-            this.reset()
-            throw error
-        }
-    }
-
     public setByteFrequencyData(data: Uint8Array) {
         this.analyser.getByteFrequencyData(data)
     }
 
-    private appendBuffer(buffer1: any, buffer2: any): AudioBuffer {
+    public async fetchPlaylist(): Promise<ISong[]> {
+        return await HttpPlayerUtility.fetchPlaylist()
+    }
+
+    
+    public async uploadFile(action: any): Promise<void> {
         
-        const numberOfChannels = Math.min(buffer1.numberOfChannels, buffer2.numberOfChannels)
-        const tmp = this.audioContext.createBuffer(numberOfChannels, (buffer1.length + buffer2.length), buffer1.sampleRate)
+        const url = `${env.apiUrl}/api/upload`
+        const request = new XMLHttpRequest()
+        const uploadForm = new FormData()
+        uploadForm.append('id', env.userId)
+        
+        let counter = 0
 
-        for (let i = 0; i < numberOfChannels; i++) {
-            const channel = tmp.getChannelData(i)
-            channel.set(buffer1.getChannelData(i), 0)
-            channel.set(buffer2.getChannelData(i), buffer1.length)
+        for (let file in action.files) {
+            uploadForm.append(counter.toString(), file)
+            counter++
         }
-        return tmp
+
+        request.open('POST', url, true)
+        request.responseType = 'json'
+        request.onprogress = (event: ProgressEvent) => {
+            this.fileUploadProgressSubject = { loaded: event.loaded, total: event.total }
+        }
+
+        request.send(uploadForm)
+        
     }
 
-    /**
-     * @link for mp3 file frames, please see https://www.codeproject.com/Articles/8295/MPEG-Audio-Frame-Header
-     * @link for wav file frames, please see http://soundfile.sapp.org/doc/WaveFormat/
-     * 
-     * The ID3v2 tag header, which should be the first information in the file, is 10 octets
-     *   long and laid out as `IIIVVFSSSS`, where
-     * 
-     * `III.......`: id, always "ID3" (0x49/73, 0x44/68, 0x33/51)
-     * `...VV.....`: version (major version + revision number)
-     * `.....F....`: flags: abc00000. a:unsynchronisation, b:extended header, c:experimental
-     * `......SSSS`: tag's size as a synchsafe integer
-     * @param {*} data
-     * @param {*} numberOfChannels
-     * @param {*} sampleRate
-     */
-    private withWaveHeader(data: Uint8Array, channelCount: number, sampleRate: number) {
-        const header = new ArrayBuffer(44)
+    public fetchAudioData(action: any): void {
+        const url = this.generateUrl(action.song)
+        const request = new XMLHttpRequest()
 
-        const dataview = new DataView(header)
-
-        // Chunk id
-        dataview.setUint8(0, "R".charCodeAt(0))
-        dataview.setUint8(1, "I".charCodeAt(0))
-        dataview.setUint8(2, "F".charCodeAt(0))
-        dataview.setUint8(3, "F".charCodeAt(0))
-
-        // Chunk length
-        dataview.setUint32(4, data.byteLength / 2 + 44, true)
-
-        // Format
-        dataview.setUint8(8, "W".charCodeAt(0))
-        dataview.setUint8(9, "A".charCodeAt(0))
-        dataview.setUint8(10, "V".charCodeAt(0))
-        dataview.setUint8(11, "E".charCodeAt(0))
-
-        // Sub Chunk 1 ID
-        dataview.setUint8(12, "f".charCodeAt(0))
-        dataview.setUint8(13, "m".charCodeAt(0))
-        dataview.setUint8(14, "t".charCodeAt(0))
-        dataview.setUint8(15, " ".charCodeAt(0))
-
-        // Sub chunk 1 size
-        dataview.setUint32(16, 16, true)
-
-        // Audio format
-        dataview.setUint16(20, 1, true)
-
-        // Number of channels
-        dataview.setUint16(22, channelCount, true)
-
-        // Sample rate
-        dataview.setUint32(24, sampleRate, true)
-
-        // ByteRate rate
-        dataview.setUint32(28, sampleRate * 1 * 2)
-
-        // Block Align
-        dataview.setUint16(32, channelCount * 2)
-
-        // Blocks per sample
-        dataview.setUint16(34, 16, true)
-
-        // Sub chunk 2 ID
-        dataview.setUint8(36, "d".charCodeAt(0))
-        dataview.setUint8(37, "a".charCodeAt(0))
-        dataview.setUint8(38, "t".charCodeAt(0))
-        dataview.setUint8(39, "a".charCodeAt(0))
-
-        // Sub Chunk 2 Size
-        dataview.setUint32(40, data.byteLength, true)
-
-        const tmp = new Uint8Array(header.byteLength + data.byteLength)
-
-        tmp.set(new Uint8Array(header), 0)
-        tmp.set(new Uint8Array(data), header.byteLength)
-
-        return tmp.buffer
+        request.open('GET', url, true)
+        request.responseType = 'arraybuffer'
+        request.onload = this.decodeAudioData.bind(this, request)
+        request.send()
     }
 
+    private async decodeAudioData(request: XMLHttpRequest): Promise<void> {
+        try {
+            const data = request.response
+            const buffer = await this.audioContext.decodeAudioData(data)
+
+            this.play(buffer)
+            this.configureAnalyser()
+
+        }
+        catch (error) {
+            console.log(error)
+            throw error
+        }
+    }
+
+<<<<<<< Updated upstream
     
 
     private createBufferSource(buffer: AudioBuffer): void {
         this.source = this.audioContext.createBufferSource()
+=======
+    private play(buffer: AudioBuffer): void {
+>>>>>>> Stashed changes
 
-        // this.source.onended = () => this.source.start(0, this.duration)
-        
-        // this.source.context.onstatechange
+        let offset = this.pausedAt
 
+        this.source = this.audioContext.createBufferSource()
         this.source.buffer = buffer
+        this.source.onended = () => console.log("song has ended")
+        this.source.connect(this.audioContext.destination)
+        this.source.connect(this.analyser)
+        this.source.connect(this.gainNode)
+        this.source.start(0, offset)
 
+        this.startedAt = this.audioContext.currentTime - offset
     }
 
-    public setAudioContext(): void {
+    private configureAnalyser(): void {
+        const analyserData = new Uint8Array(this.analyser.frequencyBinCount)
 
-        this.audioContext = new AudioContext()
-        this._gainNode = this.audioContext.createGain()
-        this.analyser = this.audioContext.createAnalyser()
+        this.analyser.getByteFrequencyData(analyserData)
 
-        this._gainNode.gain.value = 0.4
-
+        this.frequencyData = analyserData
     }
     
-    public play(resumeTime: number = 0): void {
+    public initializeAudioContext(action: any): void {
 
-        this.createBufferSource(this.audioBuffer)
+        let context = new AudioContext()
+        
+        const analyser = context.createAnalyser()
+        const gainNode = context.createGain()
 
-        this.source.connect(this.audioContext.destination)
+        // analyser.connect(context.destination)
+        // gainNode.connect(context.destination)
 
-        this.source.connect(this._gainNode)
-
-        this._gainNode.connect(this.audioContext.destination)
-
-        this.source.connect(this.analyser)
-
-        this.source.start(0, resumeTime)
+        this.audioContextSubject$.next(context)
+        this.analyser = analyser
+        this.gainNodeSubject$.next(gainNode)
 
     }
 
-    public stop(): void {
-        this.source.stop(0)
+    public setPlayingState(action: any): void {
+
+        try {
+
+            if (action.isPlaying) {
+                // await this.audioElement.play()
+                this.play(this.source.buffer)
+            }
+            else if (!action.isPlaying) {
+                let elapsed = this.audioContext.currentTime - this.startedAt
+
+                this.pausedAt = elapsed
+                // this.audioElement.pause()
+                this.source.disconnect()
+                this.source.stop(0)
+            }
+
+        } catch (error) {
+            throw error
+        }
+
     }
 
-    public reset(): void {
-        // await this.audioContext.close()
-        this.source.disconnect()
-        this._gainNode.disconnect()
-        this.analyser.disconnect()
+    private generateUrl(song: ISong): string {
+        return `${env.apiUrl}/repository/${env.userId}/${song.name.replace(/ /g, '%20')}`
+    }
+    
 
-        // this.audioContext = null
-        this.stop()
-        // this.source = null
-        // this.audioBuffer = null
-        // this.rate = 0
-        // this.startAt = 0
+    public setPreviousTrack(action: any): void {
+        this.source = null
+        this.analyser = null
+        this.gainNode = null
+        this.frequencyData = null
 
-        this.emitEvent('cancel', {})
+        this.fetchAudioData(action)
+        this.audioElementRef.src = `${env.apiUrl}/repository/${env.userId}/${action.song.name}`
     }
 
+    public setNextTrack(action: any): void {
+        this.audioElementRef.src = `${env.apiUrl}/repository/${env.userId}/${action.song.name}`
+    }
+    
     public setVolume(action: { type: string, volume: number }): void {
 
-        this.gainNode = action.volume
-        this._gainNode.gain.setValueAtTime(action.volume, this.audioContext.currentTime)
+        this.gainNodeSubject$.next(null)
+
     }
 
-
-    public playWhileLoading(duration = 0): void {
-
-        // if (!this.isStreamFinished) {
-            try {
-
-                this.duration = duration
-    
-                this.source.connect(this.audioContext.destination)
-    
-                this.source.connect(this._gainNode)
-    
-                this.source.connect(this.analyser)
-    
-                this.source.start(0, duration)
-
-                this.activeSource = this.source
-
-            } catch (error) {
-                this.reset()
-                throw error
-            }
-        // }
-    }
 }

@@ -11,6 +11,7 @@ import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map';
 import { IPlayerState } from '../../models/player.interface';
 import { IPlayerProps } from '../../models/player-state.interface';
 
+
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Volume extends Component<IPlayerState, IPlayerProps> {
 
@@ -40,5 +41,3 @@ export default class Volume extends Component<IPlayerState, IPlayerProps> {
         )
     }
 }
-
-// export default connect(mapStateToProps, mapDispatchToProps)(Volume)

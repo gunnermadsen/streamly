@@ -4,27 +4,29 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 10px;
 }
+
+@media (max-width: 950px) {
+    .Streamer__Enclosure-Main {
+        width: 100%;
+    }
+
+    .Main__Playlist {
+        grid-column: span 1;
+    }
+
+    .Main__Controls {
+        grid-column: span 1;
+    }
+}
+
+// .Streamer__Enclosure {
+//     width: 900px;
+// }
 
 .Streamer {
 
     &__Enclosure {
-
-        width: 900px;
-
-        &-Header {
-        
-            height: 8.2vh;
-            display: flex;
-            flex-direction: column;
-            padding: 0 10px;
-            // align-items: center;
-            justify-content: center;
-            font-size: calc(10px + 2vmin);
-            color: white;
-
-        }
 
         &-logo {
             height: 40vmin;
@@ -47,7 +49,9 @@
         &-Main {
 
             display: grid;
+            width: 900px;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            // grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
             gap: 15px;
 
         }
@@ -56,6 +60,23 @@
 
 
 .Main {
+
+    &__Header {
+        
+        height: 8.2vh;
+        display: flex;
+        // flex-direction: column;
+        // padding: 0 10px;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid white;
+        font-size: calc(10px + 2vmin);
+        color: white;
+
+        grid-column: span 3;
+        grid-row: 1;
+
+    }
 
     &__Controls {
         display: flex;
@@ -76,8 +97,20 @@
 
     }
 
+    &__Controls > *:not(:last-of-type) {
+        margin-bottom: 10px;
+    }
+
     &__Playlist {
         grid-column: span 2;
+    }
+
+    &__Visualizer {
+        @extend %container;
+        grid-column: span 3;
+        width: 100%;
+        height: 186px;
+        z-index: 3;
     }
 
 }
