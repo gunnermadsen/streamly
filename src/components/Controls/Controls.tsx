@@ -9,16 +9,48 @@ import './Controls.scss'
 
 import { connect } from 'react-redux'
 import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map';
-import { environment as env } from '../../environment/environment'
 
 import { IPlayerState } from '../../models/player.interface';
 import { IPlayerProps } from '../../models/player-state.interface';
 
 import { streamingUtility } from '../../store/effects/effects'
+import { takeUntil, catchError } from 'rxjs/operators';
+import { Subject, of, throwError } from 'rxjs';
+import { LoggerUtility } from '../../utils/logger.util';
 
 
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Controls extends Component<IPlayerState, IPlayerProps> {
+    private destroy$ = new Subject<boolean>()
+
+    constructor(props) {
+        super(props)
+
+        this.initializeSubscriptions()
+    }
+
+    private initializeSubscriptions(): void {
+        streamingUtility.playerState$.pipe(
+            catchError((error) => of(throwError(error))),
+            takeUntil(this.destroy$)
+        )
+            .subscribe(
+                (mode: string)  => this.handlePlayerStageChanges(mode),
+                (error: any)    => LoggerUtility.logError(error.message ?? "An error occured"),
+                ()              => LoggerUtility.logEvent("Player state subscription has completed")
+            )
+    }
+
+    private handlePlayerStageChanges(mode: string): void {
+        switch (mode) {
+            case "NEXTTRACK":
+                this.playNextSong()
+                break
+            default:
+                console.log("But the mode is not registered, so ignoring for now")
+                break
+        }
+    }
 
     public setPlayingState(event: any): void {
 
@@ -27,7 +59,6 @@ export default class Controls extends Component<IPlayerState, IPlayerProps> {
         if (!this.props.isSongSet) {
 
             this.props.setCurrentlyPlayingSong(this.props.playlist[0])
-            streamingUtility.audioElementRef.src = `${env.apiUrl}/repository/${env.userId}/${this.props.playlist[0].name}`
 
             return 
         }
@@ -70,5 +101,10 @@ export default class Controls extends Component<IPlayerState, IPlayerProps> {
                 </div>
             </div>
         )
+    }
+
+    componentWillUnmount() {
+        this.destroy$.next(false)
+        this.destroy$.unsubscribe()
     }
 }

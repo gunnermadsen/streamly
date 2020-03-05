@@ -1,7 +1,8 @@
-import { Observable, BehaviorSubject } from 'rxjs'
+import { Observable, BehaviorSubject, Subject } from 'rxjs'
 import { ISong } from '../models/track.interface'
 import { HttpPlayerUtility } from './player.http.util'
 import { environment as env } from '../environment/environment'
+import { LoggerUtility } from './logger.util'
 
 interface IUpload {
     loaded: number
@@ -84,21 +85,19 @@ export class PlaylistNetworkUtility {
         this.fileUploadProgressSubject$.next(value)
     }
 
-    private audioElement: HTMLMediaElement = null 
     private source: AudioBufferSourceNode = null
     private startedAt = 0
     private pausedAt = 0
 
+    private playerStateSubject$ = new Subject<string>()
+    public get playerState$(): Observable<string> {
+        return this.playerStateSubject$.asObservable()
+    }
 
+    private destroy$ = new Subject<boolean>()
     // note: May not need this accessor. 
     // test for reference to htmlmediaelement in initializeAudioContext method below
-    public get audioElementRef(): HTMLMediaElement {
-        return this.audioElement
-    }
-    public set audioElementRef(value: HTMLMediaElement) {
-        this.audioElement = value
-        // this.mediaStream = value.captureStream()
-    }
+    
     public setByteFrequencyData(data: Uint8Array) {
         this.analyser.getByteFrequencyData(data)
     }
@@ -139,10 +138,12 @@ export class PlaylistNetworkUtility {
         request.open('GET', url, true)
         request.responseType = 'arraybuffer'
         request.onload = this.decodeAudioData.bind(this, request)
+        request.onloadend = (event: ProgressEvent) => LoggerUtility.logEvent("On Load End Event Triggered")
         request.send()
     }
 
     private async decodeAudioData(request: XMLHttpRequest): Promise<void> {
+        LoggerUtility.logEvent("Decoding Audio Data")
         try {
             const data = request.response
             const buffer = await this.audioContext.decodeAudioData(data)
@@ -152,7 +153,7 @@ export class PlaylistNetworkUtility {
 
         }
         catch (error) {
-            console.log(error)
+            LoggerUtility.logError(error.message ?? "An error occured")
             throw error
         }
     }
@@ -162,7 +163,8 @@ export class PlaylistNetworkUtility {
 
         this.source = this.audioContext.createBufferSource()
         this.source.buffer = buffer
-        this.source.onended = () => console.log("song has ended")
+        // this.source.onended = () => this.playerStateSubject$.next("NEXTTRACK")
+        this.source.context.onstatechange = (event: Event) => LoggerUtility.logEvent("Context state has changed")
         this.source.connect(this.audioContext.destination)
         this.source.connect(this.analyser)
         this.source.connect(this.gainNode)
@@ -213,6 +215,7 @@ export class PlaylistNetworkUtility {
             }
 
         } catch (error) {
+            LoggerUtility.logError(error.message ?? "An error occured")
             throw error
         }
 
@@ -224,19 +227,28 @@ export class PlaylistNetworkUtility {
     
 
     public setTrack(action: any): void {
-        this.source = null
-        this.source.disconnect(this.analyser)
-        this.source.disconnect(this.gainNode)
-        this.frequencyData = null        
-        this.fetchAudioData(action)
-        // this.audioElementRef.src = `${env.apiUrl}/repository/${env.userId}/${action.song.name}`
+        try {
+            this.source.disconnect()
+            this.source.stop(0)
+            this.pausedAt = 0
+            this.startedAt = 0
+            this.frequencyData = null        
+        } catch (error) {
+            LoggerUtility.logError(error.message ?? "An error occured")
+            throw error
+        }
     }
 
  
     public setVolume(action: { type: string, volume: number }): void {
 
+        // unacceptable, get the fuck out of here
         this.gainNodeSubject$.next(null)
 
+    }
+
+    public unsubscribeAll(): void {
+        LoggerUtility.logEvent("Unsubscription method triggered via Streamer component")
     }
 
 }

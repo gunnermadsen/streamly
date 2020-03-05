@@ -19,8 +19,8 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
     private colorScale: any
     private circleX: any
     private svg: any
-    private readonly frequencyBinCount = 64
-    private readonly maxStdAmplitude = 32
+    private readonly frequencyBinCount = 174
+    private readonly maxStdAmplitude = 16
     private xScaler: any = d3.scaleLinear().domain([0, this.frequencyBinCount - 1]).range([0, 200])
     private yScaler: any = d3.scaleLinear().domain([0, this.maxStdAmplitude]).range([100, 0])
     private readonly COLOR_SCALE_ARRAY = [
@@ -110,6 +110,8 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
         let rects = this.svg.selectAll('rect')
             .data(data).enter().append('rect')
             .style('fill', (datum: any, index: any) => color)
+            .style('transition-timing-function', 'linear')
+            .style('transition-duration', '5ms')
             .attr('width', () => w) // this.windowWidth / data.length + .3
             .attr('rx', rx)
             .attr('x', (datum: any, index: any) => this.xScaler(index))
@@ -146,9 +148,7 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
 
     public render(): JSX.Element {
         return (
-            <div className="Visualizer__Container" id="visualizer">
-                
-            </div>
+            <div className="Visualizer__Container" id="visualizer"></div>
         )
     }
 

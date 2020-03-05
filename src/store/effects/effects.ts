@@ -95,7 +95,8 @@ export default function* sagaInitializer() {
         takeEvery(types.SET_CURRENTLY_PLAYING_SONG, setPlayingSong),
         takeEvery(types.SET_VOLUME, setVolume),
         takeEvery(types.SET_PLAYING_STATE, setPlayingState),
-        takeEvery([ types.PREVIOUS_TRACK, types.NEXT_TRACK ], setTrack),
+        takeEvery(types.PREVIOUS_TRACK, setTrack),
+        takeEvery(types.NEXT_TRACK, setTrack),
         takeEvery(types.UPLOAD_FILE, uploadFile)
     ])
 }

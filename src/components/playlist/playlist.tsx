@@ -14,7 +14,6 @@ import { Subject } from 'rxjs'
 
 
 import './Playlist.scss'
-import { environment as env } from '../../environment/environment'
 import { ISong } from '../../models/track.interface'
 import { takeUntil } from 'rxjs/operators'
 
@@ -22,31 +21,7 @@ import { takeUntil } from 'rxjs/operators'
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Playlist extends Component<IPlayerState, IPlayerProps> {
 
-    private destroy$: Subject<boolean> = new Subject<boolean>()
     public selectedIndex: number = 0
-
-    constructor(props) {
-        super(props)
-        this.initializeSubscriptions()
-    }
-
-    private initializeSubscriptions(): void {
-        
-        streamingUtility.sourceNode$.pipe(takeUntil(this.destroy$))
-            .subscribe(
-                (sourceNode: AudioBufferSourceNode) =>
-                    this.listenForSourceEvents(sourceNode)
-            )
-        
-    }
-
-    private listenForSourceEvents(sourceNode: AudioBufferSourceNode): void {
-
-        streamingUtility.frequencyData = null
-        
-        console.log("Song has ended, playing next song")
-
-    }
 
     private handleListItemClick(value: any, index: number, song: ISong) {
 
@@ -85,11 +60,6 @@ export default class Playlist extends Component<IPlayerState, IPlayerProps> {
                 </List>
             </div>
         )
-    }
-
-    componentWillUnmount() {
-        this.destroy$.next(false)
-        this.destroy$.unsubscribe()
     }
     
 }

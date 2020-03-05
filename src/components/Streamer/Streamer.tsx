@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { environment as env } from '../../environment/environment'
 
 import Playlist from '../Playlist/Playlist'
 import Controls from '../Controls/Controls'
@@ -9,7 +8,7 @@ import Info from '../Info/Info'
 import Uploader from '../Uploader/Uploader'
 import Visualizer from '../Visualizer/Visualizer'
 
-
+import { streamingUtility } from '../../store/effects/effects'
 
 import { mapStateToProps, mapDispatchToProps } from '../../shared/state.map'
 import { IPlayerState } from '../../models/player.interface'
@@ -18,7 +17,6 @@ import { IPlayerProps } from '../../models/player-state.interface'
 import './Streamer.scss'
 import { ISong } from '../../models/track.interface'
 
-import { streamingUtility } from '../../store/effects/effects'
 
 
 @connect(mapStateToProps, mapDispatchToProps)
@@ -44,10 +42,6 @@ export default class Streamer extends Component<IPlayerState, IPlayerProps> {
 
         this.props.setCurrentlyPlayingSong(song)
 
-    }
-
-    private logMetadata(event: any): void {
-        console.log(event)
     }
 
 
@@ -79,6 +73,10 @@ export default class Streamer extends Component<IPlayerState, IPlayerProps> {
                 </main>
             </div>
         )
+    }
+
+    componentWillUnmount() {
+        streamingUtility.unsubscribeAll()
     }
 
 }

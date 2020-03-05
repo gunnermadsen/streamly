@@ -1,22 +1,24 @@
 
 export class LoggerUtility {
 
-    public logEvent(text: string): void {
+    public static logEvent(text: string): void {
         const time = new Date()
-        console.log(`[${time.toLocaleTimeString()}] ${text}`)
+        const cowboy = String.fromCodePoint(0x1F920)
+        console.log(`%c [${time.toLocaleTimeString()}] ${text} ${cowboy}`, 'color: green;')
     }
 
-    public logObject(text: string, object: any): void {
+    public static logObject(text: string, object: any): void {
         const time = new Date()
         console.log(`[${time.toLocaleTimeString()}] ${text}:`, object)
     }
 
-    public logError(text: any): void {
+    public static logError(text: any): void {
         const time = new Date()
-        console.error(`[${time.toLocaleTimeString()}] ${text}`)
+        const fire = String.fromCodePoint(0x1F525)
+        console.error(`%c [${time.toLocaleTimeString()}] ${text} ${fire}`)
     }
 
-    public reportError(message: Error) {
+    public static reportError(message: Error) {
         this.logError(`Error ${message.name}: ${message.message}`)
     }
     
