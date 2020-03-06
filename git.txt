@@ -7,7 +7,7 @@ git merge <branch-name> // merge changes from <branch-name> to master
 git push origin master // push changes to remote repository
 
 
-############## stash and apply changes to new/existing branch ################
+############## copy changes from branch and apply them to new/existing branch ################
 git stash
 git checkout [-b] <branch>
 git stash apply

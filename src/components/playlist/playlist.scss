@@ -2,16 +2,6 @@
 
 // svg graph styles
 
-.led-border {
-    color: black;
-
-    line { stroke-width: 0.2; }
-    path { stroke-width: 0; }
-
-}
-
-
-
 .Playlist__Container {
     @extend %container;
     overflow-y: scroll;

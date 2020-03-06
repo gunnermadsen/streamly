@@ -1,6 +1,12 @@
 @import '../../index';
 
+.led-border {
+    color: black;
 
+    line { stroke-width: 0; }
+    path { stroke-width: 0; }
+
+}
 
 .Visualizer__Container {
     height: 17vh;

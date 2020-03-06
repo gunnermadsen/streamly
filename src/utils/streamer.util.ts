@@ -3,6 +3,8 @@ import { ISong } from '../models/track.interface'
 import { HttpPlayerUtility } from './player.http.util'
 import { environment as env } from '../environment/environment'
 import { LoggerUtility } from './logger.util'
+import { parseBlob, IAudioMetadata } from 'music-metadata-browser'
+
 
 interface IUpload {
     loaded: number
@@ -85,6 +87,17 @@ export class PlaylistNetworkUtility {
         this.fileUploadProgressSubject$.next(value)
     }
 
+    /**
+     * The track metadata subject. Provides metadata for the track that is currently playing
+     */
+    private trackMetadataSubject$ = new Subject<IAudioMetadata>()
+    public get trackMetadata$(): Observable<IAudioMetadata> {
+        return this.trackMetadataSubject$.asObservable()
+    }
+    public set trackMetadata(value: IAudioMetadata) {
+        this.trackMetadataSubject$.next(value)
+    }
+
     private source: AudioBufferSourceNode = null
     private startedAt = 0
     private pausedAt = 0
@@ -145,12 +158,17 @@ export class PlaylistNetworkUtility {
     private async decodeAudioData(request: XMLHttpRequest): Promise<void> {
         LoggerUtility.logEvent("Decoding Audio Data")
         try {
-            const data = request.response
+            const data = request.response as ArrayBuffer
+            const trackMetadata = await this.getTrackMetadata(data)
+
+            this.trackMetadata = trackMetadata
+
             const buffer = await this.audioContext.decodeAudioData(data)
 
             this.play(buffer)
             this.configureAnalyser()
 
+            console.log(trackMetadata)
         }
         catch (error) {
             LoggerUtility.logError(error.message ?? "An error occured")
@@ -158,12 +176,25 @@ export class PlaylistNetworkUtility {
         }
     }
 
-    
+    private async getTrackMetadata(data: ArrayBuffer): Promise<IAudioMetadata> {
+
+        try {
+            const blob = new Blob([data])
+            const metadata = await parseBlob(blob)
+
+            return metadata
+        } 
+        catch (error) {
+            LoggerUtility.logError(error.message ?? "An error occured while fetching the metadata")
+        }
+
+    }
+
     private play(buffer: AudioBuffer): void {
 
         this.source = this.audioContext.createBufferSource()
         this.source.buffer = buffer
-        // this.source.onended = () => this.playerStateSubject$.next("NEXTTRACK")
+        this.source.onended = this.handleSourceStateChange.bind(this)
         this.source.context.onstatechange = (event: Event) => LoggerUtility.logEvent("Context state has changed")
         this.source.connect(this.audioContext.destination)
         this.source.connect(this.analyser)
@@ -171,6 +202,15 @@ export class PlaylistNetworkUtility {
         this.source.start(0, this.pausedAt)
 
         this.startedAt = this.audioContext.currentTime - this.pausedAt
+    }
+    private async handleSourceStateChange(event: Event): Promise<void> {
+
+        if (this.sourceNode.buffer.duration <= this.audioContext.currentTime) {
+            // await this.audioContext.close()
+            LoggerUtility.logEvent("Emitting NEXTTRACK custom event to subscriptions")
+            this.playerStateSubject$.next("NEXTTRACK")
+        }
+        // LoggerUtility.logObject("Souce onended event emitted", event)
     }
 
     private configureAnalyser(): void {
@@ -202,14 +242,12 @@ export class PlaylistNetworkUtility {
         try {
 
             if (action.isPlaying) {
-                // await this.audioElement.play()
                 this.play(this.source.buffer)
             }
             else if (!action.isPlaying) {
                 let elapsed = this.audioContext.currentTime - this.startedAt
 
                 this.pausedAt = elapsed
-                // this.audioElement.pause()
                 this.source.disconnect()
                 this.source.stop(0)
             }
@@ -242,8 +280,7 @@ export class PlaylistNetworkUtility {
  
     public setVolume(action: { type: string, volume: number }): void {
 
-        // unacceptable, get the fuck out of here
-        this.gainNodeSubject$.next(null)
+        this.gainNode.gain.value = action.volume
 
     }
 

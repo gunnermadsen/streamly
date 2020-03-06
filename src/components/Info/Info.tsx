@@ -8,15 +8,47 @@ import { IPlayerProps } from '../../models/player-state.interface'
 import './Info.scss'
 import '../../assets/default.png'
 
+import { streamingUtility } from '../../store/effects/effects'
+import { IAudioMetadata } from 'music-metadata-browser'
+
+import { create } from 'exif-parser'
+
+
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Info extends Component<IPlayerState, IPlayerProps> {
+
+    private picture: string = '/default.png'
+
+    constructor(props) {
+        super(props)
+        this.initializeSubscriptions()
+    }
+
+    private initializeSubscriptions(): void {
+
+        streamingUtility.trackMetadata$.subscribe(
+            (metadata: IAudioMetadata) => this.handleMetadata(metadata)
+        )
+
+    }
+
+    private handleMetadata(metadata: IAudioMetadata): void {
+
+        const pictures = metadata.common.picture
+        console.log(pictures)
+        for (let i = 0; i < pictures.length; i++) {
+            let parser = create(pictures[i].data).parse()
+
+            console.log(parser)
+        }
+    }
 
     private configureView(): JSX.Element {
         if (this.props.isSongSet) {
             return (
                 <div className="Info__Enclosure">
                     <div className="Info__Enclosure-Artwork">
-                        <img className="Artwork" src="/default.png" alt="Album Artwork" />
+                        <img className="Artwork" src={this.picture} alt="Album Artwork" />
                     </div>
                     <div className="Info__Enclosure-Title"> 
                         <h5 className="Ellipse__Temp">{this.props.song.name}</h5> {/* Info__Enclosure-Banner */}
