@@ -12,3 +12,8 @@ git stash
 git checkout [-b] <branch>
 git stash apply
 
+
+############## Undo a previous commit #################
+git checkout <commit hash>
+git revert <commit hash>
+git checkout <current branch>

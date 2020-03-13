@@ -159,16 +159,16 @@ export class PlaylistNetworkUtility {
         LoggerUtility.logEvent("Decoding Audio Data")
         try {
             const data = request.response as ArrayBuffer
-            const trackMetadata = await this.getTrackMetadata(data)
+            // const trackMetadata = await this.getTrackMetadata(data)
 
-            this.trackMetadata = trackMetadata
+            // this.trackMetadata = trackMetadata
 
             const buffer = await this.audioContext.decodeAudioData(data)
 
             this.play(buffer)
             this.configureAnalyser()
 
-            console.log(trackMetadata)
+            // console.log(trackMetadata)
         }
         catch (error) {
             LoggerUtility.logError(error.message ?? "An error occured")

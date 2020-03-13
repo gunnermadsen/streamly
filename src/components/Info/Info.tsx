@@ -21,7 +21,7 @@ export default class Info extends Component<IPlayerState, IPlayerProps> {
 
     constructor(props) {
         super(props)
-        this.initializeSubscriptions()
+        // this.initializeSubscriptions()
     }
 
     private initializeSubscriptions(): void {
