@@ -90,15 +90,15 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
                 // .attr('stroke-width', 0.2)
                 // .attr('stroke', 'white')
 
-            .call(
-                d3.axisLeft(this.yScaler)
-                    .ticks(30)
-                    .tickSize(-this.windowWidth / 1.1)
+            // .call(
+            //     d3.axisLeft(this.yScaler)
+            //         .ticks(30)
+            //         .tickSize(-this.windowWidth / 1.1)
                     
-                    .tickFormat(
-                        d3.format("" as any)
-                    )
-            )
+            //         .tickFormat(
+            //             d3.format("" as any)
+            //         )
+            // )
 
         // this.canvasContext = this.canvas.node().getContext('2d')
 
