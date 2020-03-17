@@ -22,18 +22,10 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
     private customSvg
     private canvas
     private canvasContext
-    private readonly frequencyBinCount = 128
+    private readonly frequencyBinCount = 12
     private readonly maxStdAmplitude = 16
-    private xScaler = d3.scaleLinear().domain([0, this.frequencyBinCount - 1]).range([0, 200])
-    private yScaler = d3.scaleLinear().domain([0, this.maxStdAmplitude]).range([185, 0])
-    private readonly COLOR_SCALE_ARRAY = [
-        d3.interpolateRdYlGn,
-        d3.interpolateYlGnBu,
-        d3.interpolateSpectral,
-        d3.interpolateRainbow,
-        d3.interpolateWarm,
-        d3.interpolateCool
-    ]
+    private xScaler = d3.scaleLinear().domain([0, this.frequencyBinCount - 1]).range([0, 150])
+    private yScaler = d3.scaleLinear().domain([0, this.maxStdAmplitude]).range([32, 0])
     private destroy$: Subject<boolean> = new Subject<boolean>()
  
     constructor(props) { 
@@ -47,12 +39,16 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
 
     private initializeSubscriptions(): void {
 
+        // the streamer utility exposes observables as part of its interface, 
+        // lets subscribe to them!
+
         streamingUtility.frequencyData$.pipe(takeUntil(this.destroy$))
             .subscribe(
                 (frequencyData: Uint8Array) =>
                     this.graphAudioData(frequencyData)
             )
         
+        // note, we may not need this subscription, or the method that it calls
         streamingUtility.sourceNode$.pipe(takeUntil(this.destroy$))
             .subscribe(
                 (sourceNode: AudioBufferSourceNode) =>
@@ -74,133 +70,41 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
 
     private initializeChart(): void {
 
-        // const id = `#list-elem-${index}`
-
         let data = []
         let value = 256
-        // var width = 750,
-        //     height = 400
 
+        // append an svg element to the dom with the dimensions
         this.svg = d3.select("#visualizer")
             .append('svg')
             .classed('item__graph', true)
             .classed('led-border', true)
                 .attr('width', this.windowWidth / 2)
                 .attr('height', 115)
-                // .attr('stroke-width', 0.2)
-                // .attr('stroke', 'white')
 
             // .call(
-            //     d3.axisLeft(this.yScaler)
-            //         .ticks(30)
-            //         .tickSize(-this.windowWidth / 1.1)
-                    
+            //     d3.axisLeft(this.yScaler).ticks(30).tickSize(-this.windowWidth / 1.1)
             //         .tickFormat(
             //             d3.format("" as any)
             //         )
             // )
 
-        // this.canvasContext = this.canvas.node().getContext('2d')
-
-        // const customBase = document.createElement('custom')
-        // this.customSvg = d3.select(customBase)
-
         d3.range(value).forEach((el: any) => data.push({ value: el }))
 
-        // this.colorScale = d3.scaleLinear().domain([0, 150]).range((["purple", "red", "green"]) as any)
-        this.colorScale = d3.scaleSequential(d3.interpolateYlGnBu).domain(d3.extent(data, (d: any) => d.value))
-
-        // var nextCol = 1
-
-        // const genColor = () => {
-        //     var ret = []
-        //     // via http://stackoverflow.com/a/15804183
-        //     if (nextCol < 16777215) {
-        //         ret.push((nextCol & 0xff)) // R
-        //         ret.push((nextCol & 0xff00) >> 8) // G 
-        //         ret.push((nextCol & 0xff0000) >> 16) // B
-
-        //         nextCol += 1
-        //     }
-        //     var col = "rgb(" + ret.join(',') + ")"
-        //     return col
-        // }
-
-        // var colourToNode = {} // map to track the colour of nodes
-
-        // const join = this.customSvg.selectAll('custom.rect').data(data)
-        // var groupSpacing = 4
-        // var cellSpacing = 2
-        // var cellSize = Math.floor((width - 11 * groupSpacing) / 100) - cellSpacing
-
-        // const dataBind = (data) => {
-        //     var enterSel = join.enter()
-        //         .append('custom')
-        //         .attr('class', 'rect')
-        //         .attr('x', function (d, i) {
-        //             var x0 = Math.floor(i / 100) % 10, x1 = Math.floor(i % 10)
-        //             return groupSpacing * x0 + (cellSpacing + cellSize) * (x1 + x0 * 10)
-        //         })
-        //         .attr('y', function (d, i) {
-        //             var y0 = Math.floor(i / 1000), y1 = Math.floor(i % 100 / 10)
-        //             return groupSpacing * y0 + (cellSpacing + cellSize) * (y1 + y0 * 10)
-        //         })
-        //         .attr('width', 0)
-        //         .attr('height', 0)
-
-        //     join
-        //         .merge(enterSel)
-        //         .transition()
-        //         .attr('width', cellSize)
-        //         .attr('height', cellSize)
-        //         .attr('fillStyle', function (d) { return this.colorScale(d.value) })
-
-        //         // new -----------------------------------------------------
-
-        //         .attr('fillStyleHidden', function (d) {
-        //             if (!d.hiddenCol) {
-
-        //                 d.hiddenCol = genColor()
-        //                 colourToNode[d.hiddenCol] = d
-
-        //             } // here we (1) add a unique colour as property to each element and (2) map the colour to the node in the colourToNode-dictionary 
-
-        //             return d.hiddenCol
-
-        //         })
-        // }
-        
-        
+        // create a color scale function to define a range of colors used in the visualizer
+        // this.colorScale = d3.scaleLinear().domain([0, 150]).range((["pink", "red"]) as any)
+        this.colorScale = d3.scaleSequential(d3.interpolateViridis).domain(d3.extent(data, (d: any) => d.value))
 
     }
 
     private graphAudioData(data: Uint8Array): void {
         if (!data || !this.svg) return
-        
-
-        // logic for circles
-
-        // this.circleX = d3.scaleLinear()
-        //     .domain([0, data.length])
-        //     .range([0, this.windowWidth])
-
-        // let dots = this.svg.selectAll('circle')
-        //     .data(data).enter().append('circle')
-        //     .attr('r', (d: any) => this.windowWidth / data.length + .3)
-        //     .attr('cx', (d: any, i: any) => this.circleX(i))
-        //     .attr('cy', (d: any) => this.windowHeight / 2 - d)
-        //     .attr('fill', (d: any, i: any) => this.colorScale(d))
-
-        // const color = d3.scaleSequential((index) => index).domain([0, this.frequencyBinCount]).interpolator(d3.interpolateRainbow)
 
         const w = this.xScaler(1) - this.xScaler(0)
         const rx = w * 0.1
-        // logic for rectangles
+        // lets draw rectangles to the svg using the byte array data from the streamer utility observable
         let rects = this.svg.selectAll('rect')
             .data(data).enter().append('rect')
             .style('fill', (datum: any, index: any) => this.colorScale(datum))
-            // .style('transition-timing-function', 'linear')
-            // .style('transition-duration', '5ms')
             .attr('width', () => w) // this.windowWidth / data.length + .3
             .attr('rx', rx)
             .attr('x', (datum: any, index: any) => this.xScaler(index))
@@ -213,14 +117,16 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
             .attr('opacity', 0.6)
 
 
-        const drawChart = () => {
+        // create a function to recursively re render the chart
+        const drawChart = () => 
+        {
+            // repaint the DOM using this drawChart() function
             requestAnimationFrame(drawChart)
-            streamingUtility.setByteFrequencyData(data)
-            // logic for circles
-            // this.svg
-            //     .selectAll('circle').data(data)
-            //     .attr('cy', (d: any) => this.windowHeight / 2 - d)
-            //     .attr('fill', (d: any, i: any) => this.colorScale(d))
+
+            // set the byte frequency data for the audio context analyser node 
+            streamingUtility.byteFrequencyData = data
+
+            // redraw the rectangles in the visualization
             this.svg.selectAll('rect')
                 .data(data)
                     .transition()

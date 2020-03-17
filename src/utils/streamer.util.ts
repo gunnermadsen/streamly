@@ -75,9 +75,19 @@ export class PlaylistNetworkUtility {
         this.sourceNodeSubject$.next(value)
     }
 
+    /**
+     * The Duration Behavior Subject. Provides an Observable for the Duration of the audio track
+     */
+    private durationSubject$ = new BehaviorSubject<number>(null)
+    public get duration$(): Observable<number> {
+        return this.durationSubject$.asObservable()
+    }
+    public set duration(duration: number) {
+        this.durationSubject$.next(duration)
+    }
 
     /**
-     * The GainNode Behavior Subject. Provides an Observable for the GainNode API
+     * The File Upload Behavior Subject. Provides an Observable for the File Upload API
      */
     private fileUploadProgressSubject$ = new BehaviorSubject<IUpload>({ loaded: 0, total: 0})
     public get fileUploadProgress$(): Observable<IUpload> {
@@ -102,16 +112,15 @@ export class PlaylistNetworkUtility {
     private startedAt = 0
     private pausedAt = 0
 
+
     private playerStateSubject$ = new Subject<string>()
     public get playerState$(): Observable<string> {
         return this.playerStateSubject$.asObservable()
     }
 
     private destroy$ = new Subject<boolean>()
-    // note: May not need this accessor. 
-    // test for reference to htmlmediaelement in initializeAudioContext method below
     
-    public setByteFrequencyData(data: Uint8Array) {
+    public set byteFrequencyData(data: Uint8Array) {
         this.analyser.getByteFrequencyData(data)
     }
 

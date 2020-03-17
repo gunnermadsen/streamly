@@ -85,7 +85,8 @@
         &-Info {
             @extend %container;
             @extend %widgetflex;
-            height: 300px;
+            height: 400px;
+            padding: 20px;
         }
 
         &-Volume {

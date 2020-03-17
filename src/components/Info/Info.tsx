@@ -12,6 +12,15 @@ import { streamingUtility } from '../../store/effects/effects'
 import { IAudioMetadata } from 'music-metadata-browser'
 
 import { create } from 'exif-parser'
+import Controls from '../Controls/Controls'
+import { Tooltip, Slider } from '@material-ui/core'
+import Playback from '../Playback/Playback'
+
+interface Props {
+    children: React.ReactElement;
+    open: boolean;
+    value: number;
+}
 
 
 @connect(mapStateToProps, mapDispatchToProps)
@@ -21,14 +30,14 @@ export default class Info extends Component<IPlayerState, IPlayerProps> {
 
     constructor(props) {
         super(props)
-        // this.initializeSubscriptions()
+        this.initializeSubscriptions()
     }
 
     private initializeSubscriptions(): void {
 
-        streamingUtility.trackMetadata$.subscribe(
-            (metadata: IAudioMetadata) => this.handleMetadata(metadata)
-        )
+        // streamingUtility.trackMetadata$.subscribe(
+        //     (metadata: IAudioMetadata) => this.handleMetadata(metadata)
+        // )
 
     }
 
@@ -48,13 +57,13 @@ export default class Info extends Component<IPlayerState, IPlayerProps> {
             return (
                 <div className="Info__Enclosure">
                     <div className="Info__Enclosure-Artwork">
-                        <img className="Artwork" src={this.picture} alt="Album Artwork" />
+                        <img className="Artwork" src={ this.picture } alt="Album Artwork" />
                     </div>
                     <div className="Info__Enclosure-Title"> 
-                        <h5 className="Ellipse__Temp">{this.props.song.name}</h5> {/* Info__Enclosure-Banner */}
+                        <h5 className="Ellipse__Temp">{ this.props.song.name }</h5> {/* Info__Enclosure-Banner */}
                     </div> 
-                    <div className="Info__Enclosure-Scrubber">
-                        
+                    <div className="Info__Enclosure-Playback">
+                        <Playback></Playback>
                     </div>
                 </div>
             )
@@ -67,7 +76,7 @@ export default class Info extends Component<IPlayerState, IPlayerProps> {
             )
         }
     }
-
+    
     public render(): JSX.Element {
         return (
             <div className="Info">
@@ -75,4 +84,15 @@ export default class Info extends Component<IPlayerState, IPlayerProps> {
             </div>
         )
     }
+}
+
+
+function ValueLabelComponent(props: Props) {
+    const { children, open, value } = props;
+
+    return (
+        <Tooltip open={open} enterTouchDelay={0} placement="top" title={value}>
+            {children}
+        </Tooltip>
+    );
 }
