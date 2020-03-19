@@ -10,18 +10,16 @@ import { IPlayerState } from '../../models/player.interface'
 import { IPlayerProps } from '../../models/player-state.interface'
 import { streamingUtility } from '../../store/effects/effects'
 
-import { Subject } from 'rxjs'
-
-
 import './Playlist.scss'
 import { ISong } from '../../models/track.interface'
-import { takeUntil } from 'rxjs/operators'
 
 
 @connect(mapStateToProps, mapDispatchToProps)
 export default class Playlist extends Component<IPlayerState, IPlayerProps> {
 
     public selectedIndex: number = 0
+
+    private formatPattern: RegExp = new RegExp('.(wav|mp3|m4a|ogg|flac)', 'gi') 
 
     private handleListItemClick(value: any, index: number, song: ISong) {
 
@@ -40,11 +38,13 @@ export default class Playlist extends Component<IPlayerState, IPlayerProps> {
     }
  
     public render() {
+        // filter out files that are not the allowed file format e.g. wav, mp3, m4a, ogg, or flac
+        const playlist = this.props.playlist.filter(track => this.formatPattern.test(track.name))
         return (
             <div className="Playlist__Container">
                 <List component="nav" aria-label="main mailbox folders">
                     {
-                        this.props.playlist.map((song, index) => {
+                        playlist.map((song, index) => {
                             return (
                                 <ListItem 
                                     key={index} 
@@ -52,7 +52,7 @@ export default class Playlist extends Component<IPlayerState, IPlayerProps> {
                                     button 
                                     selected={this.selectedIndex === index}
                                     onClick={event => this.handleListItemClick(event, index, song)}>
-                                    <ListItemText className="item__label" primary={song.name.replace(/.(wav|mp3|m4a|ogg|flac)/gi, '')}/>
+                                    <ListItemText className="item__label" primary={song.name.replace(this.formatPattern, '')}/>
                                 </ListItem>
                             )
                         })

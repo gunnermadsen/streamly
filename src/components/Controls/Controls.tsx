@@ -26,7 +26,7 @@ export default class Controls extends Component<IPlayerState, IPlayerProps> {
     constructor(props) {
         super(props)
 
-        this.initializeSubscriptions()
+        // this.initializeSubscriptions()
     }
 
     private initializeSubscriptions(): void {
@@ -42,6 +42,7 @@ export default class Controls extends Component<IPlayerState, IPlayerProps> {
     }
 
     private handlePlayerStageChanges(mode: string): void {
+        console.warn("NEXTTRACK event emitted by the streamerutility")
         switch (mode) {
             case "NEXTTRACK":
                 this.playNextSong()

@@ -50,7 +50,7 @@ export default class Streamer extends Component<IPlayerState, IPlayerProps> {
             <div className="Streamer">
                 <main className="Streamer__Enclosure-Main">
                     <header className="Main__Header">
-                        <h3>Streamily</h3>
+                        <h3>Streamly</h3>
                         <Uploader></Uploader>
                     </header>
                     <div className="Main__Controls">

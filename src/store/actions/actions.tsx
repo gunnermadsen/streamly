@@ -16,6 +16,6 @@ export function setVolume(payload) {
     return { type: SET_VOLUME, payload }
 }
 
-export function setPlayingState(playload) {
+export function setPlayingState(payload) {
     return { type: SET_PLAYING_STATE }
 }

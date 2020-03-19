@@ -102,14 +102,14 @@ export default class Visualizer extends Component<IPlayerState, IPlayerProps> {
         const w = this.xScaler(1) - this.xScaler(0)
         const rx = w * 0.1
         // lets draw rectangles to the svg using the byte array data from the streamer utility observable
-        let rects = this.svg.selectAll('rect')
+        this.svg.selectAll('rect')
             .data(data).enter().append('rect')
             .style('fill', (datum: any, index: any) => this.colorScale(datum))
             .attr('width', () => w) // this.windowWidth / data.length + .3
             .attr('rx', rx)
             .attr('x', (datum: any, index: any) => this.xScaler(index))
             .attr('y', (datum: any, index: any) => this.yScaler(datum))
-            .attr('height', (datum: any) => (this.yScaler(0) - this.yScaler(datum))) //
+            .attr('height', (datum: any) => (this.yScaler(0) - this.yScaler(datum)))
             .attr('opacity', 0)
                 .transition()
                     .duration(0)

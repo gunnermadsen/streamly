@@ -1,9 +1,7 @@
 const path = require('path')
-
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-const webpack = require('webpack')
 
 module.exports = {
     entry: {
@@ -16,19 +14,35 @@ module.exports = {
     },
     optimization: {
         splitChunks: {
-            chunks: 'all',
+            chunks: 'initial',
             maxInitialRequests: Infinity,
             minSize: 0,
             cacheGroups: {
                 vendor: {
                     test: /[\\/]node_modules[\\/]/,
-                    name(module) {
+                    name: function(module) {
                         const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
                         return `npm.${packageName.replace('@', '')}`
                     }
                 }
             }
-        }
+        },
+
+        /**
+         * Webpack has three types of chunks:
+         *      - Entry Chunks
+         *      - Normal Chunks
+         *      - Initial Chunks
+         */
+        // splitChunks: {
+        //     cacheGroups: {
+        //         commons: {
+        //             test: /[\\/]node_modules[\\/]/,
+        //             name: "vendor",
+        //             chunks: "initial",
+        //         }
+        //     }
+        // }
     },
     module: {
         rules: [

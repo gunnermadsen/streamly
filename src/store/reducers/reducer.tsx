@@ -18,7 +18,9 @@ const initialState: IPlayerState = {
 const findIndex = (state: IPlayerState, action: any) => 
     state.playlist.findIndex(
         (song: ISong) => 
-            song === action.song
+            {
+                return song.name === action.song.name
+            }
     )
 
 
