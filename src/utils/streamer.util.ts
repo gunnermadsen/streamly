@@ -15,7 +15,7 @@ interface IUpload {
 export class PlaylistNetworkUtility {
 
     /**
-     * The AudioContext Behavior Subject. Provides an Observable for the AudioContext API
+     * The AudioContext Behavior Subject. Provides an Observable and Observer for the AudioContext API
      */
     private audioContextSubject$ = new BehaviorSubject<AudioContext>(null)
     public get audioContext(): AudioContext { 
@@ -24,7 +24,7 @@ export class PlaylistNetworkUtility {
 
 
     /**
-     * The AnalyserNode Behavior Subject. Provides an Observable for the AnalyserNode API
+     * The AnalyserNode Behavior Subject. Provides an Observable and Observer for the AnalyserNode API
      */
     private analyserSubject$ = new BehaviorSubject<AnalyserNode>(null)
     public get analyser(): AnalyserNode {
@@ -33,13 +33,10 @@ export class PlaylistNetworkUtility {
     public set analyser(value: AnalyserNode) {
         this.analyserSubject$.next(value)
     }
-    public get analyser$(): Observable<AnalyserNode> {
-        return this.analyserSubject$.asObservable()
-    }
 
 
     /**
-     * The Uint8Array Behavior Subject for Frequency Data. Provides an Observable for the Frequency data obtained from the AnalyserNode API
+     * The Uint8Array Behavior Subject for Frequency Data. Provides an Observable and Observer for the Frequency data obtained from the AnalyserNode API
      */ 
     private frequencyDataSubject$ = new BehaviorSubject<Uint8Array>(null)
     public get frequencyData$(): Observable<Uint8Array> {
@@ -51,7 +48,7 @@ export class PlaylistNetworkUtility {
 
 
     /**
-     * The GainNode Behavior Subject. Provides an Observable for the GainNode API
+     * The GainNode Behavior Subject. Provides an Observable and Observer for the GainNode API
      */
     private gainNodeSubject$ = new BehaviorSubject<GainNode>(null)
     public get gainNode(): GainNode {
@@ -63,9 +60,11 @@ export class PlaylistNetworkUtility {
 
     
     /**
-     * The GainNode Behavior Subject. Provides an Observable for the GainNode API
+     * The SouceNode Behavior Subject. Provides an Observable and Observer for the AudioBufferSouceNode API
      */ 
     private sourceNodeSubject$ = new BehaviorSubject<AudioBufferSourceNode>(null)
+    private source: AudioBufferSourceNode = null
+
     public get sourceNode(): AudioBufferSourceNode {
         return this.source
     }
@@ -77,7 +76,7 @@ export class PlaylistNetworkUtility {
     }
 
     /**
-     * The Duration Behavior Subject. Provides an Observable for the Duration of the audio track
+     * The Duration Behavior Subject. Provides an Observable and Observer for the Duration of the audio track
      */
     private durationSubject$ = new BehaviorSubject<number>(0)
     public get duration$(): Observable<number> {
@@ -88,7 +87,7 @@ export class PlaylistNetworkUtility {
     }
 
     /**
-     * The Current Time Behavior Subject. Provides an Observable for the current time of the audio track. 
+     * The Current Time Behavior Subject. Provides an Observable and Observer for the current time of the audio track. 
      * This subject will be updated in one second intervals.
      */
     private currentTimeSubject$ = new BehaviorSubject<number>(0)
@@ -100,7 +99,7 @@ export class PlaylistNetworkUtility {
     }
 
     /**
-     * The File Upload Behavior Subject. Provides an Observable for the File Upload API
+     * The File Upload Behavior Subject. Provides an Observable and Observer for the File Upload API
      */
     private fileUploadProgressSubject$ = new BehaviorSubject<IUpload>({ loaded: 0, total: 0 })
     public get fileUploadProgress$(): Observable<IUpload> {
@@ -111,7 +110,7 @@ export class PlaylistNetworkUtility {
     }
 
     /**
-     * The track metadata subject. Provides metadata for the track that is currently playing
+     * The track metadata Behavior Subject. Provides the metadata for the track that is currently playing
      */
     private trackMetadataSubject$ = new Subject<IAudioMetadata>()
     public get trackMetadata$(): Observable<IAudioMetadata> {
@@ -121,7 +120,6 @@ export class PlaylistNetworkUtility {
         this.trackMetadataSubject$.next(value)
     }
 
-    private source: AudioBufferSourceNode = null
     private startedAt = 0
     private pausedAt = 0
 
@@ -180,25 +178,37 @@ export class PlaylistNetworkUtility {
 
 
     private async decodeAudioData(request: XMLHttpRequest): Promise<void> {
+
         LoggerUtility.logEvent("Decoding Audio Data")
+
         try {
 
+            // if the audio context is in closed state, initiate it first
             if (this.audioContext.state === "closed") {
-                this.initializeAudioContext()
+                this.initializeAudioGraph()
             }
 
+            // get the data from the http request
             const data = request.response as ArrayBuffer
-            // const trackMetadata = await this.getTrackMetadata(data)
-            // this.trackMetadata = trackMetadata
             
+            // start the track timer observable
+            this.initiateTrackTimer()
+            
+            // create an AudioBuffer from the response data
             const buffer = await this.audioContext.decodeAudioData(data)
             
+            // set the duration of the track
             this.duration = buffer.duration
-            
-            this.play(buffer)
-            this.configureAnalyser()
-            this.initiateTrackTimer()
 
+            // play the buffer
+            this.play(buffer)
+
+            // configure the analyser for audio visualizations
+            // this.configureAnalyser()
+
+            // configure the track metadata
+            // const trackMetadata = await this.getTrackMetadata(data)
+            // this.trackMetadata = trackMetadata
         }
         catch (error) {
             LoggerUtility.logError(error.message ?? "An error occured")
@@ -207,24 +217,21 @@ export class PlaylistNetworkUtility {
     }
 
     private initiateTrackTimer(): void {
+        // emit a value every second, and set the currentTime subject to the audiocontext current time
         interval(1000).pipe(
-            // tap(() => LoggerUtility.logEvent("Context state has changed")),
-            map(() => {
-                this.currentTime = this.audioContext.currentTime
-            }),
+            map(() => this.currentTime = this.audioContext.currentTime),
             takeUntil(this.destroy$)
         ).subscribe()
-
-        this.destroy$.subscribe(value => {
-            console.log("event emitted for destroy$ observable")
-        })
     }
 
 
     private async getTrackMetadata(data: ArrayBuffer): Promise<IAudioMetadata> {
 
         try {
+            // create a blob from the arraybuffer
             const blob = new Blob([data])
+
+            // parse the blob and return the metadata
             const metadata = await parseBlob(blob)
 
             return metadata
@@ -238,16 +245,24 @@ export class PlaylistNetworkUtility {
 
     private play(buffer: AudioBuffer): void {
 
+        // create a source to play the buffer from
         this.source = this.audioContext.createBufferSource()
         this.source.buffer = buffer
 
         this.source.onended = (event: Event) => this.handleSourceStateChange(event)
         // this.source.context.onstatechange = (event: Event) => 
+
+        // connect the source to the destination
         this.source.connect(this.audioContext.destination)
+
+        // connect the source to the analyser and gain nodes in the audio graph
         this.source.connect(this.analyser)
         this.source.connect(this.gainNode)
+
+        // start playing the track
         this.source.start(0, this.pausedAt)
 
+        // save the state of the current time the track started at
         this.startedAt = this.audioContext.currentTime - this.pausedAt
     }
 
@@ -258,14 +273,19 @@ export class PlaylistNetworkUtility {
         // and is called when the AudioBufferSourceNode (this.source) onended event is firedd
         // we need a specific condition to be satisfied to reset the environment 
 
-        // the 'ended' type on the event object could work, lets see its other states when the track ends
-
-        if (event.type === 'ended') { // this.sourceNode.buffer.duration <= this.audioContext.currentTime
-            // await this.audioContext.close()
+        if (event.type === 'ended') { 
             LoggerUtility.logEvent("Emitting NEXTTRACK custom event to subscriptions")
+
+            // emit custom event to subscribers
             this.playerStateSubject$.next("NEXTTRACK")
+
+            // emit value to destroy$ subject
+            this.destroy$.next(true)
+
+            // reset the duration and current time for the time slider in the UI
+            this.duration = 0
+            this.currentTime = 0
         }
-        // LoggerUtility.logObject("Souce onended event emitted", event)
     }
 
 
@@ -274,20 +294,21 @@ export class PlaylistNetworkUtility {
 
         this.analyser.getByteFrequencyData(analyserData)
 
+        // set the frequencyData behaviorsubject to the analyser data UInt8Array
         this.frequencyData = analyserData
     }
 
     
-    public initializeAudioContext(): void {
+    public initializeAudioGraph(): void {
 
-        let context = new AudioContext()
+        // define the audiocontext
+        const context = new AudioContext()
         
+        // create the analyser and gain nodes for the audio graph
         const analyser = context.createAnalyser()
         const gainNode = context.createGain()
 
-        // analyser.connect(context.destination)
-        // gainNode.connect(context.destination)
-
+        // set the 
         this.audioContextSubject$.next(context)
         this.analyser = analyser
         this.gainNodeSubject$.next(gainNode)

@@ -49,7 +49,7 @@ function* setPlayingSong(action: any) {
 function* initializeAudioContext(action: any) {
     try {
 
-        yield call(() => streamingUtility.initializeAudioContext())
+        yield call(() => streamingUtility.initializeAudioGraph())
 
 
     } 
