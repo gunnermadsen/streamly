@@ -68,7 +68,7 @@ export default class Streamer extends Component<IPlayerState, IPlayerProps> {
                         <Playlist></Playlist>
                     </div>
                     <div className="Main__Visualizer">
-                        <Visualizer></Visualizer>
+                        {/* <Visualizer></Visualizer> */}
                     </div>
                 </main>
             </div>

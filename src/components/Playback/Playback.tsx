@@ -9,9 +9,9 @@ import { Subject } from 'rxjs'
 import { takeUntil, tap, distinctUntilChanged } from 'rxjs/operators'
 
 interface Props {
-    children: React.ReactElement;
-    open: boolean;
-    value: number;
+    children: React.ReactElement
+    open: boolean
+    value: number
 }
 
 interface IPlayback { 
@@ -125,13 +125,22 @@ export default class Playback extends Component<IPlayback> {
 
 
     private createPercentageOfTimeElapse(): number {
-        const loaded = Math.floor((this.state.timeElapsed / this.state.duration) * 100)
+        const loaded = Math.round(this.state.timeElapsed / this.state.duration * 100)
         return loaded
     }
 
 
-    private createTimeString(value: number): string {
-        const result = new Date(value * 1000).toISOString().substr(11, 8)
+    private createTimeString(seconds: number): string {
+
+        // if seconds times 60 is greater than the number of seconds in an hour (3600) 
+        // then set the length of the string to 8 (length of time string for over an hour duration)
+        // else set the length to 5 (length of time string under an hour)
+        let length = seconds * 60 > 3600 ? 8 : 5
+
+        const timeString = new Date(seconds * 1000).toISOString()
+
+        const result = timeString.substr(14, 5)
+
         return result
     }
 
@@ -140,11 +149,11 @@ export default class Playback extends Component<IPlayback> {
 
 
 function ValueLabelComponent(props: Props) {
-    const { children, open, value } = props;
+    const { children, open, value } = props
 
     return (
         <Tooltip open={open} enterTouchDelay={0} placement="top" title={value}>
             {children}
         </Tooltip>
-    );
+    )
 }

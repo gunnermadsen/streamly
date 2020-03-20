@@ -4,7 +4,7 @@ import { HttpPlayerUtility } from './player.http.util'
 import { environment as env } from '../environment/environment'
 import { LoggerUtility } from './logger.util'
 import { parseBlob, IAudioMetadata } from 'music-metadata-browser'
-import { map, takeUntil } from 'rxjs/operators'
+import { map, takeUntil, tap } from 'rxjs/operators'
 
 
 interface IUpload {
@@ -173,7 +173,7 @@ export class PlaylistNetworkUtility {
         const request = new XMLHttpRequest()
         request.open('GET', url, true)
         request.responseType = 'arraybuffer'
-        request.onload = this.decodeAudioData.bind(this, request)
+        request.onload = () => this.decodeAudioData(request)
         request.onloadend = (event: ProgressEvent) => LoggerUtility.logEvent("On Load End Event Triggered")
         request.send()
     }
@@ -182,18 +182,22 @@ export class PlaylistNetworkUtility {
     private async decodeAudioData(request: XMLHttpRequest): Promise<void> {
         LoggerUtility.logEvent("Decoding Audio Data")
         try {
+
+            if (this.audioContext.state === "closed") {
+                this.initializeAudioContext()
+            }
+
             const data = request.response as ArrayBuffer
             // const trackMetadata = await this.getTrackMetadata(data)
             // this.trackMetadata = trackMetadata
-            this.initiateTrackTimer()
-
+            
             const buffer = await this.audioContext.decodeAudioData(data)
-
-
+            
             this.duration = buffer.duration
-
+            
             this.play(buffer)
             this.configureAnalyser()
+            this.initiateTrackTimer()
 
         }
         catch (error) {
@@ -205,9 +209,15 @@ export class PlaylistNetworkUtility {
     private initiateTrackTimer(): void {
         interval(1000).pipe(
             // tap(() => LoggerUtility.logEvent("Context state has changed")),
-            map(() => this.currentTime = this.audioContext.currentTime),
+            map(() => {
+                this.currentTime = this.audioContext.currentTime
+            }),
             takeUntil(this.destroy$)
         ).subscribe()
+
+        this.destroy$.subscribe(value => {
+            console.log("event emitted for destroy$ observable")
+        })
     }
 
 
@@ -268,7 +278,7 @@ export class PlaylistNetworkUtility {
     }
 
     
-    public initializeAudioContext(action: any): void {
+    public initializeAudioContext(): void {
 
         let context = new AudioContext()
         
@@ -285,11 +295,15 @@ export class PlaylistNetworkUtility {
     }
 
 
-    public setPlayingState(action: any): void {
+    public async setPlayingState(action: any): Promise<void> {
 
         try {
 
             if (action.isPlaying) {
+                this.initiateTrackTimer()
+
+                await this.audioContext.resume()
+
                 this.play(this.source.buffer)
             }
             else if (!action.isPlaying) {
@@ -298,6 +312,10 @@ export class PlaylistNetworkUtility {
                 this.pausedAt = elapsed
                 this.source.disconnect()
                 this.source.stop(0)
+
+                await this.audioContext.suspend()
+
+                this.destroy$.next(true)
             }
 
         } catch (error) {
@@ -313,8 +331,13 @@ export class PlaylistNetworkUtility {
     }
     
 
-    public setTrack(action: any): void {
+    public async setTrack(action: any): Promise<void> {
         try {
+            // lets try suspending the audiocontext when we change tracks
+
+            // note, we need to see if this resets the currentTime
+            await this.audioContext.close()
+
             // reset the source 
             this.source.disconnect()
             this.source.stop(0)
@@ -332,7 +355,7 @@ export class PlaylistNetworkUtility {
 
             // stop the interval observable from emitting the current time of the track
             this.destroy$.next(true)
-            
+                        
         } catch (error) {
             LoggerUtility.logError(error.message ?? "An error occured")
             throw error

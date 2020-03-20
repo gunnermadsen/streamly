@@ -12,7 +12,7 @@ const initialState: IPlayerState = {
     volume: 28,
     isPlaying: false,
     isSongSet: false, 
-    selectedIndex: null
+    selectedIndex: 0
 }
 
 const findIndex = (state: IPlayerState, action: any) => 
