@@ -27,7 +27,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "wp:start": "webpack-dev-server --colors --config webpack.dev.js",
+    "wp:serve": "webpack-dev-server --colors --config webpack.dev.js",
     "wp:build": "webpack --config webpack.prod.js"
   },
   "eslintConfig": {

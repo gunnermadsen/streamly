@@ -6,7 +6,7 @@ import { streamingUtility } from '../../store/effects/effects'
 
 import { Tooltip, Slider } from '@material-ui/core'
 import { Subject } from 'rxjs'
-import { takeUntil, tap, distinctUntilChanged } from 'rxjs/operators'
+import { takeUntil, tap, distinctUntilChanged, startWith } from 'rxjs/operators'
 
 interface Props {
     children: React.ReactElement
@@ -55,6 +55,7 @@ export default class Playback extends Component<IPlayback> {
         )
 
         streamingUtility.currentTime$.pipe(
+            startWith(0),
             tap((currentTime: number) => {
                 if (currentTime === 0) {
                     this.resetPlaybackState()

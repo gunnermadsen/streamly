@@ -19,7 +19,7 @@ export default class Playlist extends Component<IPlayerState, IPlayerProps> {
 
     public selectedIndex: number = 0
 
-    private formatPattern: RegExp = new RegExp('.(wav|mp3|m4a|ogg|flac)', 'gi') 
+    private readonly formatPattern = new RegExp('.(wav|mp3|m4a|ogg|flac)', 'i')
 
     private handleListItemClick(value: any, index: number, song: ISong) {
 

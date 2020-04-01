@@ -168,12 +168,13 @@ export class PlaylistNetworkUtility {
 
     public fetchAudioData(action: any): void {
         const url = this.generateUrl(action.song)
-        const request = new XMLHttpRequest()
-        request.open('GET', url, true)
-        request.responseType = 'arraybuffer'
-        request.onload = () => this.decodeAudioData(request)
-        request.onloadend = (event: ProgressEvent) => LoggerUtility.logEvent("On Load End Event Triggered")
-        request.send()
+        const xhr = new XMLHttpRequest()
+        xhr.open('GET', url, true)
+        xhr.responseType = 'arraybuffer'
+        xhr.onload = () => this.decodeAudioData(xhr)
+        xhr.onloadend = (event: ProgressEvent) => LoggerUtility.logEvent("On Load End Event Triggered")
+        xhr.onerror = (event: ProgressEvent<EventTarget>) => LoggerUtility.logObject("An Error Occured", event)
+        xhr.send()
     }
 
 
@@ -191,9 +192,6 @@ export class PlaylistNetworkUtility {
             // get the data from the http request
             const data = request.response as ArrayBuffer
             
-            // start the track timer observable
-            this.initiateTrackTimer()
-            
             // create an AudioBuffer from the response data
             const buffer = await this.audioContext.decodeAudioData(data)
             
@@ -204,7 +202,7 @@ export class PlaylistNetworkUtility {
             this.play(buffer)
 
             // configure the analyser for audio visualizations
-            // this.configureAnalyser()
+            this.configureAnalyser()
 
             // configure the track metadata
             // const trackMetadata = await this.getTrackMetadata(data)
@@ -255,9 +253,18 @@ export class PlaylistNetworkUtility {
         // connect the source to the destination
         this.source.connect(this.audioContext.destination)
 
-        // connect the source to the analyser and gain nodes in the audio graph
-        this.source.connect(this.analyser)
+        // start the track timer observable
+        this.initiateTrackTimer()
+
+        // connect the AudioBufferSourceNode to the gainNode
+        // and the gainNode to the destination
         this.source.connect(this.gainNode)
+        this.gainNode.connect(this.audioContext.destination)
+
+        // connect the source to the analyser 
+        // and gain nodes in the audio graph
+        this.source.connect(this.analyser)
+        // this.source.connect(this.gainNode)
 
         // start playing the track
         this.source.start(0, this.pausedAt)
@@ -308,11 +315,15 @@ export class PlaylistNetworkUtility {
         const analyser = context.createAnalyser()
         const gainNode = context.createGain()
 
-        // set the 
+        // set the analyser and gain node subjects
         this.audioContextSubject$.next(context)
         this.analyser = analyser
         this.gainNodeSubject$.next(gainNode)
 
+        this.gainNode.gain.value = 0.28
+
+        // this.gainNode.connect(this.audioContext.destination)
+        // this.analyser.connect(this.audioContext.destination)
     }
 
 
@@ -348,7 +359,7 @@ export class PlaylistNetworkUtility {
 
 
     private generateUrl(song: ISong): string {
-        return `${env.apiUrl}/repository/${env.userId}/${song.name.replace(/ /g, '%20')}`
+        return `${env.apiUrl}/repository/${env.userId}/${song.name}`
     }
     
 
@@ -386,7 +397,9 @@ export class PlaylistNetworkUtility {
  
     public setVolume(action: { type: string, volume: number }): void {
 
-        this.gainNode.gain.value = action.volume
+        const gain = action.volume / 100
+        console.log(gain)
+        this.gainNode.gain.setValueAtTime(gain, this.audioContext.currentTime + 1)
 
     }
 
